@@ -13,7 +13,7 @@ This guide covers an explicit upstream update or adaptation change. Do not edit 
    ```
 
 4. Read the emitted proposal's `manifest.json` and `review.json`. Review every addition, removal, content change, mode change, and disposition. Renames appear as removal plus addition. Review unchanged-copy policy too.
-5. Inspect adaptation changes under `tools/` and `port/`. The review digest binds their sorted paths and hashes as well as the source manifest. A template-only edit invalidates approval.
+5. Inspect adaptation changes under `tools/` and `port/`. The review digest binds their sorted paths and hashes as well as the source manifest. A template-only edit invalidates approval. On later drift, generation lists added, removed, and changed adaptation input paths. See the [maintenance format reference](reference/maintenance.md) for the acceptance schema.
 6. Accept that exact proposal and digest.
 
    ```sh
@@ -29,6 +29,16 @@ This guide covers an explicit upstream update or adaptation change. Do not edit 
 For adaptation-only changes, propose the same pinned source commit again. The source change list can be empty while the review digest changes. Unknown file kinds, Git symlinks or submodules, unregistered role references, unknown adapters, stale exact hashes, and missing host mappings must be resolved explicitly before acceptance.
 
 `port/required-terms.json` owns the required mappings and explicit protocol-field and Cursor-path inventories. The scanner independently checks snake_case assignments, Task-call fields, `.cursor/` directories, and supported backticked role wording before applying patches. It does not detect every new host concept or prove semantic equivalence. Review the complete upstream diff even when lexical checks pass.
+
+## Migrate an older acceptance
+
+If generation reports an unsupported acceptance schema, propose the same pinned source commit with the current tools. Review the exact new digest and adaptation inputs, then accept and generate using the steps above. Do not edit `acceptance.json` to change its version or populate its inventory. Schema 1 approvals do not carry forward automatically.
+
+## Retain review and recovery evidence
+
+Keep each proposal's `manifest.json`, `review.json`, and `pstack/` together until review and any recovery finish. Acceptance does not delete older proposals. Record the proposal directory and reviewed digest in your review notes. A newer proposal does not revoke or mark an older proposal as superseded.
+
+Before manually deleting a specific `.cache/proposal-*` directory or orphaned stage, confirm that no writer is active and no pending journal or backup needs it. Run `npm run check` successfully and retain any evidence needed for review. Inspect each exact directory before removing it. Do not clear all of `.cache/` or use wildcard deletion as recovery.
 
 ## Recover an interrupted write
 
@@ -48,9 +58,13 @@ npm run upstream:repair -- lock --acknowledge EXACT_OWNERSHIP_TOKEN
 
 Do not remove a live lock manually. Repair never steals it automatically. It compares process-start evidence for live local PIDs and refuses missing evidence or a mismatch. PID reuse can leave a lock blocked until the observed process is no longer live.
 
-A missing or malformed owner record without a usable token cannot use automatic repair. Inspect the lock and running writers. Remove it manually only after establishing that no writer can publish.
+A caught owner-file write error cleans up only the newly created lock whose filesystem identity still matches. This does not handle process death or guarantee cleanup after filesystem failure. A missing or malformed owner record without a usable token cannot use automatic repair. Inspect the lock and running writers. Remove it manually only after establishing that no writer can publish.
 
-If `.mstack-pending` exists, repeat acceptance from the same verified proposal and digest. Then regenerate and check. Source publication spans directories and is not a cross-directory atomic transaction. A journal or source mismatch blocks generation instead of treating a partial publication as accepted.
+If `.mstack-pending` exists, retain proposals, stages, and backups. The journal stores the reviewed digest, not the proposal path. Locate the retained proposal using your review notes and its `review.json`, then repeat acceptance from that verified proposal and digest. Regenerate and check afterward.
+
+If the proposal is lost, preserve the journal and remaining recovery evidence. Obtain a repository containing the intended full pinned commit, propose it again, and review the new proposal and exact digest before acceptance. Compare the intended source manifest and adaptation inputs with your retained review evidence. Do not assume the partial current tree identifies the intended update. If you cannot establish the intended commit and inputs, stop for manual investigation. Do not delete the journal to bypass generation's blocker.
+
+Source publication spans directories and is not a cross-directory atomic transaction. A journal or source mismatch blocks generation instead of treating a partial publication as accepted.
 
 If generated output is interrupted or manually changed, inspect the diff first. Repair only after confirming the accepted source and intended adapters:
 

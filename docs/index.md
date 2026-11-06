@@ -15,6 +15,7 @@ Choose a page for what you need now. The user documentation follows [Diátaxis](
 ## Look up facts
 
 - [Commands, configuration schema, selectors, and mode state](configuration.md).
+- [Maintenance commands, acceptance schema, and retained state](reference/maintenance.md).
 - [Compatibility and capability limits](reference/compatibility.md).
 - [Verification contracts and coverage](verification.md).
 - [Generated Pi host mappings](../generated/docs/harness/pi.md).

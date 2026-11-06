@@ -1,10 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, cpSync, chmodSync, symlinkSync } from 'node:fs';
+import { execFileSync, spawnSync } from 'node:child_process';
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, cpSync, chmodSync, symlinkSync, readdirSync } from 'node:fs';
 import { tmpdir, hostname } from 'node:os';
 import { join } from 'node:path';
-import { inventory, validateSnapshot, safePath, propose, accept, generate, repairLock, exportSource, readJSON, json } from '../tools/importer.mjs';
+import { inventory, validateSnapshot, safePath, propose, accept, generate, repairLock, exportSource, readJSON, json, sha } from '../tools/importer.mjs';
 import { render } from '../tools/render.mjs';
 
 function workspace(t) {
@@ -176,4 +176,96 @@ test('host vocabulary inventory validates shapes and mapping references', t => {
     writeFileSync(path, json(value));
     assert.throws(() => render(root, source, manifest), /Invalid host vocabulary inventory/);
   }
+});
+
+test('hermetic Git inventory preserves unusual paths, bytes and executable modes', t => {
+  const root = workspace(t), repo = join(root, 'repo'); mkdirSync(repo);
+  git(repo, 'init', '-q');
+  const files = new Map([['plugin.json', Buffer.from('{"version":"fixture"}')]]);
+  for (let i = 0; i < 64; i++) files.set(`skills/nested level/資料 ${i}/reference ${i}.md`, Buffer.from(`fixture ${i}\n`));
+  files.set('skills/scripts/run me.sh', Buffer.from('#!/bin/sh\nexit 0\n'));
+  for (const [path, bytes] of files) {
+    const file = join(repo, 'pstack', path);
+    mkdirSync(file.slice(0, file.lastIndexOf('/')), { recursive: true });
+    writeFileSync(file, bytes);
+    chmodSync(file, path.endsWith('.sh') ? 0o755 : 0o644);
+  }
+  const commit = revision(repo);
+  writeFileSync(join(repo, 'pstack/plugin.json'), 'checkout is not authoritative');
+  const result = inventory({ repo, commit });
+  assert.equal(result.records.length, files.size);
+  for (const record of result.records) {
+    const bytes = execFileSync('git', ['-C', repo, 'cat-file', 'blob', `${commit}:pstack/${record.sourcePath}`]);
+    assert.deepEqual(bytes, files.get(record.sourcePath));
+    assert.deepEqual(result.blobs.get(record.sourcePath), bytes);
+    assert.equal(record.sha256, sha(bytes));
+    assert.equal(record.gitMode, record.sourcePath.endsWith('.sh') ? '100755' : '100644');
+  }
+});
+
+test('CLI rejects malformed invocations before creating any state', t => {
+  const root = mkdtempSync(join(tmpdir(), 'mstack-cli-'));
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+  const cases = [[], ['unknown'], ['toString'], ['repair'], ['repair', 'unknown'], ['propose'], ['propose', '--repo', 'repo'], ['accept'], ['accept', '--proposal', 'missing'], ['export'], ['generate', '--unknown'], ['check', 'extra'], ['check', '--root'], ['check', '--root', '--check'], ['check', '--root', ''], ['check', '--root', root, '--root', root], ['repair', 'lock', '--acknowledge']];
+  for (const args of cases) {
+    const result = spawnSync(process.execPath, [join(process.cwd(), 'tools/upstream.mjs'), ...args], { cwd: root, encoding: 'utf8' });
+    assert.equal(result.status, 1, JSON.stringify(args));
+    assert.match(result.stderr, /Usage:/);
+    assert.doesNotMatch(result.stderr, /TypeError|ENOENT|node:internal/);
+    assert.deepEqual(readdirSync(root), []);
+  }
+});
+
+test('acceptance input inventory diagnoses drift and rejects old or tampered approval', t => {
+  const root = workspace(t), repo = join(root, 'repo'); mkdirSync(repo);
+  exportSource(root, join(repo, 'pstack')); git(repo, 'init', '-q');
+  const commit = revision(repo), proposal = propose(root, { repo, commit });
+  const reviewed = readJSON(join(proposal, 'review.json')).reviewDigest;
+  accept(root, { proposal, reviewed });
+  const path = join(root, 'upstream/acceptance.json'), original = readJSON(path);
+  assert.equal(original.schema, 2);
+  assert.equal(original.reviewDigest, reviewed);
+  generate(root);
+  const changed = join(root, 'port/templates/setup.md'), bytes = readFileSync(changed);
+  writeFileSync(changed, 'changed');
+  const removed = join(root, 'port/roles.json'), roles = readFileSync(removed); rmSync(removed);
+  writeFileSync(join(root, 'port/new notes.md'), 'added');
+  assert.throws(() => generate(root, { check: true }), error => {
+    assert.match(error.message, /changed port\/templates\/setup.md/);
+    assert.match(error.message, /removed port\/roles.json/);
+    assert.match(error.message, /added port\/new notes.md/);
+    return true;
+  });
+  writeFileSync(changed, bytes); writeFileSync(removed, roles); rmSync(join(root, 'port/new notes.md'));
+  const mutations = [a => a.schema = 1, a => delete a.inputs, a => a.inputs[0].sha256 = '0'.repeat(64), a => a.inputs.push(a.inputs[0]), a => a.inputs[0].path = '../escape', a => a.inputs = {}, a => a.inputs[0].extra = true, a => a.reviewDigest = '0'.repeat(64)];
+  for (const mutate of mutations) {
+    const value = structuredClone(original); mutate(value); writeFileSync(path, json(value));
+    assert.throws(() => generate(root, { check: true }), /invalid|schema|Unsafe/);
+  }
+  writeFileSync(path, json(original)); generate(root, { check: true });
+  const second = propose(root, { repo, commit });
+  accept(root, { proposal: second, reviewed: readJSON(join(second, 'review.json')).reviewDigest });
+  assert.ok(readJSON(join(proposal, 'manifest.json')));
+  assert.ok(readJSON(join(second, 'manifest.json')));
+});
+
+
+test('lost proposals leave the pending journal blocked until fresh reviewed acceptance', t => {
+  const root = workspace(t), repo = join(root, 'repo'); mkdirSync(repo);
+  exportSource(root, join(repo, 'pstack')); git(repo, 'init', '-q');
+  const commit = revision(repo), proposal = propose(root, { repo, commit });
+  const reviewed = readJSON(join(proposal, 'review.json')).reviewDigest;
+  assert.throws(() => accept(root, { proposal, reviewed, interruptAt: 'journal' }), /interruption/);
+  const stages = readdirSync(root).filter(path => path.startsWith('.mstack-source-'));
+  assert.ok(stages.length);
+  assert.deepEqual(readJSON(join(root, '.mstack-pending')), { reviewed });
+  rmSync(proposal, { recursive: true });
+  assert.throws(() => generate(root, { check: true }), /If lost, re-propose.*do not delete the pending journal/);
+  assert.deepEqual(readJSON(join(root, '.mstack-pending')), { reviewed });
+  const replacement = propose(root, { repo, commit });
+  const freshReview = readJSON(join(replacement, 'review.json'));
+  assert.deepEqual(freshReview.changes, []);
+  accept(root, { proposal: replacement, reviewed: freshReview.reviewDigest });
+  for (const stage of stages) assert.ok(readdirSync(root).includes(stage));
+  generate(root); generate(root, { check: true });
 });

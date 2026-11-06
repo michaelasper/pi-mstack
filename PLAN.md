@@ -73,3 +73,19 @@ Coverage partitions are upstream/import safety with Muse Wonder, native runtime 
 ## Throughput checkpoint
 
 The repository began without commits or implementation. Importer, generated resources, native extension, and tests now exist. One writer owns implementation. Four independent audit lanes inspect a frozen snapshot and isolated test copies. Bulk upstream changes belong in the reproducible importer, not manual edits. Final runtime and package evidence remains required.
+
+## Post-publication improvements
+
+User authorised implementation, independent review, fixes, verification, and GitHub publication of the improvement findings. Baseline is `3fab20540f2aaa5e4a0287e55389382ea09e0a8b`.
+
+- [x] Frame. Parent reproduced custom-provider false blockers and missing CLI flag diagnostics.
+- [x] Implement exact registry selection, CLI validation, owned lock-write cleanup, adaptation drift diagnostics, hermetic Git inventory edge cases, and safe proposal-retention guidance.
+- [x] Review with fresh independent models and resolve actionable findings. Codex and Muse Contributor both ACCEPTed; reports are retained under `docs/research/*-improvement-review.md`. No blocking finding remained. The optional, unreproduced close-error masking observation is deferred.
+- [x] Verify the full packed/native suite and reviewed generation. Parent monitor #5 passed check, typecheck, all 52 tests without skips, and whitespace checks. Log `/tmp/pi-mstack-improvements-parent-tests.log`. Changes after this run require appropriate re-verification.
+- [x] Prepare reviewed changes for the authorised GitHub publication. Workflow #3 owns the final push and remote identity check.
+
+Workflow #3 owns this sequence. Sole writer `23a6c781-039a-4d98-88aa-4e5d970a2d45` works in `/tmp/pi-mstack-improvements.CQYSLq`; parent alone integrates into the live checkout. Proposal cleanup stays explicit and manual. No automatic deletion of review or recovery evidence is authorised. Xiaomi review coverage remains unavailable until the active registry is refreshed; no substitute billing provider is implied.
+
+Parent integrated the source changes and refreshed schema-2 acceptance through proposal `.cache/proposal-3yT3KL`, reviewed digest `1f142e0089a29932768d1fc74e1b32da021bd3f821134f3fcb03f6fb4f56ddbd`. Fresh Codex and Muse reviews run in workflow `e4a76118-65d3-43e9-8962-a770228c41ba`. No publication until both accept.
+
+Model the Domain keeps selectors as exact registry identities and accepted adaptation inputs as a verifiable inventory. Prove It Works requires actual SDK regressions, packaged tests, and remote commit verification, not writer reports alone.

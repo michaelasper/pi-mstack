@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
-import { existsSync, readFileSync, writeFileSync, readdirSync, lstatSync, mkdirSync, chmodSync, renameSync, rmSync, mkdtempSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync, readdirSync, lstatSync, mkdirSync, chmodSync, renameSync, rmSync, mkdtempSync, openSync, closeSync, fstatSync, unlinkSync, rmdirSync } from 'node:fs';
 import { join, dirname, posix, resolve } from 'node:path';
 import { hostname } from 'node:os';
 import { render } from './render.mjs';
@@ -83,9 +83,23 @@ export function validateSnapshot(root, manifest) {
   }
   if (json([...stored].sort()) !== json(walk(root).sort())) throw Error('Source inventory mismatch');
 }
+function adaptationInputs(root) {
+  return ['tools', 'port'].flatMap(dir => walk(join(root, dir)).map(path => ({ path: `${dir}/${path}`, sha256: sha(readFileSync(join(root, dir, path))) })));
+}
 export function digest(root, manifest) {
-  const inputs = ['tools', 'port'].flatMap(dir => walk(join(root, dir)).map(path => ({ path: `${dir}/${path}`, sha256: sha(readFileSync(join(root, dir, path))) })));
-  return sha(json({ manifest, inputs }));
+  return sha(json({ manifest, inputs: adaptationInputs(root) }));
+}
+function validateAcceptance(acceptance, manifest) {
+  const invalid = () => { throw Error('Acceptance inventory invalid or unsupported schema; propose and accept a fresh review digest'); };
+  if (!acceptance || acceptance.schema !== 2 || !Array.isArray(acceptance.inputs) || typeof acceptance.reviewDigest !== 'string') invalid();
+  const paths = new Set();
+  for (const input of acceptance.inputs) {
+    if (!input || typeof input.path !== 'string' || !/^(tools|port)\//.test(input.path) || typeof input.sha256 !== 'string' || !/^[0-9a-f]{64}$/.test(input.sha256) || Object.keys(input).sort().join(',') !== 'path,sha256') invalid();
+    safePath(input.path);
+    if (paths.has(input.path)) invalid();
+    paths.add(input.path);
+  }
+  if (sha(json({ manifest, inputs: acceptance.inputs })) !== acceptance.reviewDigest) invalid();
 }
 function processStart(pid) {
   try { return execFileSync('ps', ['-p', String(pid), '-o', 'lstart='], { encoding: 'utf8' }).trim(); } catch { return ''; }
@@ -94,7 +108,25 @@ export function acquireLock(root, proposalDigest) {
   const path = join(root, '.mstack-lock'), token = randomUUID();
   try { mkdirSync(path); } catch { throw Error(`Writer lock exists at ${path}; inspect owner.json and use upstream:repair lock`); }
   const owner = { hostname: hostname(), pid: process.pid, start: processStart(process.pid), proposalDigest, token };
-  writeFileSync(join(path, 'owner.json'), json(owner), { flag: 'wx', mode: 0o600 });
+  const created = lstatSync(path), ownerPath = join(path, 'owner.json');
+  let fd, ownedFile;
+  try {
+    fd = openSync(ownerPath, 'wx', 0o600);
+    ownedFile = fstatSync(fd);
+    writeFileSync(fd, json(owner));
+  } catch (error) {
+    try {
+      const current = lstatSync(path);
+      if (current.dev === created.dev && current.ino === created.ino) {
+        if (ownedFile) {
+          const file = lstatSync(ownerPath);
+          if (file.dev === ownedFile.dev && file.ino === ownedFile.ino) unlinkSync(ownerPath);
+        }
+        rmdirSync(path);
+      }
+    } catch { /* Ambiguous ownership or nonempty locks remain for manual inspection. */ }
+    throw error;
+  } finally { if (fd !== undefined) closeSync(fd); }
   return () => {
     if (readJSON(join(path, 'owner.json')).token !== token) throw Error('Lock ownership changed');
     rmSync(path, { recursive: true });
@@ -153,7 +185,7 @@ export function accept(root, { proposal, reviewed, interruptAt }) {
     const stage = mkdtempSync(join(root, '.mstack-source-'));
     for (const r of manifest.records) put(join(stage, 'pstack'), storagePath(r), readFileSync(join(proposal, 'pstack', storagePath(r))), r.gitMode);
     put(stage, 'manifest.json', json(manifest));
-    put(stage, 'acceptance.json', json({ schema: 1, reviewDigest: reviewed }));
+    put(stage, 'acceptance.json', json({ schema: 2, reviewDigest: reviewed, inputs: adaptationInputs(root) }));
     writeFileSync(join(root, '.mstack-pending'), json({ reviewed }));
     if (interruptAt === 'journal') throw Error('Injected interruption after journal');
     const backup = join(root, '.mstack-source-backup');
@@ -174,11 +206,23 @@ export function generate(root, { check = false, repair = false } = {}) {
   if (check && existsSync(join(root, '.mstack-lock'))) throw Error('Writer lock present; retry check after publication');
   const release = check ? () => {} : acquireLock(root, 'generation');
   try {
-    if (existsSync(join(root, '.mstack-pending'))) throw Error('Interrupted acceptance; repeat the verified proposal');
+    if (existsSync(join(root, '.mstack-pending'))) throw Error('Interrupted acceptance; retain proposals and stages, repeat the verified proposal and digest. If lost, re-propose the pinned commit and review a fresh digest; do not delete the pending journal');
     const manifest = readJSON(join(root, 'upstream/manifest.json'));
     validateSnapshot(join(root, 'upstream/pstack'), manifest);
     const acceptance = readJSON(join(root, 'upstream/acceptance.json'));
-    if (acceptance.schema !== 1 || acceptance.reviewDigest !== digest(root, manifest)) throw Error('Adaptation inputs changed or acceptance invalid; propose and accept a fresh review digest');
+    validateAcceptance(acceptance, manifest);
+    const inputs = adaptationInputs(root);
+    if (acceptance.reviewDigest !== sha(json({ manifest, inputs }))) {
+      const previous = new Map(acceptance.inputs.map(input => [input.path, input.sha256]));
+      const changes = [];
+      for (const input of inputs) {
+        if (!previous.has(input.path)) changes.push(`added ${input.path}`);
+        else if (previous.get(input.path) !== input.sha256) changes.push(`changed ${input.path}`);
+        previous.delete(input.path);
+      }
+      for (const path of previous.keys()) changes.push(`removed ${path}`);
+      throw Error(`Adaptation inputs changed: ${changes.join('; ')}; propose and accept a fresh review digest`);
+    }
     const output = render(root, join(root, 'upstream/pstack'), manifest);
     const index = [...output].map(([path, r]) => ({ path, sha256: sha(r.bytes), gitMode: r.gitMode, sourceHash: r.sourceHash, adapterId: r.adapterId }));
     output.set('index.json', { bytes: Buffer.from(json(index)), gitMode: '100644' });

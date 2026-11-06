@@ -18,7 +18,7 @@ This is an illustrative configuration, not a claim that these provider models ar
 }
 ```
 
-A selector is `provider/full-model-id` with an optional supported thinking suffix. Full IDs can contain slashes and colons. Only a recognized final thinking suffix is stripped. For a literal model ID ending in `:high`, use an additional explicit suffix such as `provider/model:high:off`. `auto` and `inherit-parent` both mean the current parent. The injected role table resolves either to an exact effective selector for each run. The workflow passes that explicit selector to native delegation so an agent override cannot replace inheritance accidentally.
+A selector is `provider/full-model-id` with an optional supported thinking suffix. Provider names and model IDs can contain slashes and colons, including URL-shaped provider names. Resolution compares the exact combined `provider/model` string against the authenticated registry, without guessing the provider boundary. If multiple registry entries share that combined string, the role is blocked as ambiguous. Only a recognized final thinking suffix is stripped. For a literal model ID ending in `:high`, use an additional explicit suffix such as `provider/model:high:off`. `auto` and `inherit-parent` both mean the current parent. The injected role table resolves either to an exact effective selector for each run. The workflow passes that explicit selector to native delegation so an agent override cannot replace inheritance accidentally.
 
 Missing scalar roles inherit the parent. Missing panel roles use two ordered parent samples. Repeated entries remain repeated samples. They do not establish cross-family diversity.
 

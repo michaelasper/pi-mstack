@@ -10,7 +10,7 @@ const RoleSchema = Type.Array(Type.Object({ name: Type.String(), panel: Type.Boo
 const roleInput: unknown = JSON.parse(readFileSync(new URL('../../port/roles.json', import.meta.url), 'utf8'));
 if (!Value.Check(RoleSchema, roleInput)) throw Error('Invalid bundled role registry');
 export const roles = roleInput;
-const SelectionSchema = Type.String({ pattern: '^(inherit-parent|auto|[^\\s/:]+/[^\\s]+)$' });
+const SelectionSchema = Type.String({ pattern: '^(inherit-parent|auto|[^\\s/]+/[^\\s]+)$' });
 const ConfigSchema = Type.Object({
   version: Type.Literal('pi-mstack/1'),
   roles: Type.Record(Type.String(), Type.Union([SelectionSchema, Type.Array(SelectionSchema, { minItems: 1 })])),
@@ -30,9 +30,9 @@ export function splitSelector(value: string) {
   if (value === 'inherit-parent' || value === 'auto') return { kind: 'inherit' } as const;
   const suffix = value.match(/:(off|minimal|low|medium|high|xhigh|max)$/);
   const base = suffix ? value.slice(0, suffix.index) : value;
-  const match = base.match(/^([^\s/:]+)\/([^\s]+)$/);
+  const match = base.match(/^[^\s/]+\/[^\s]+$/);
   if (!match) throw Error(`Invalid exact model selector: ${value}`);
-  return { kind: 'exact', provider: match[1], id: match[2], thinking: suffix?.[1] } as const;
+  return { kind: 'exact', combinedId: base, thinking: suffix?.[1] } as const;
 }
 export function loadConfig(path: string): ConfigState {
   try {
@@ -80,10 +80,12 @@ export function roleData(state: ConfigState, ctx: Pick<ExtensionContext, 'model'
       if (!effective) return 'BLOCKED, parent model unavailable';
       const exact = splitSelector(effective);
       if (exact.kind !== 'exact') throw Error('Effective model must be exact');
-      const model = available.find(m => m.provider === exact.provider && m.id === exact.id);
+      const matches = available.filter(m => `${m.provider}/${m.id}` === exact.combinedId);
+      if (matches.length > 1) return `${effective} [BLOCKED, ambiguous combined model ID]`;
+      const model = matches[0];
       if (!model) return `${effective} [BLOCKED, unavailable or unauthenticated]`;
       if (exact.thinking && !getSupportedThinkingLevels(model).some(level => level === exact.thinking)) return `${effective} [BLOCKED, unsupported thinking]`;
-      const outside = ctx.scopedModels.length && !ctx.scopedModels.some(s => s.model.provider === exact.provider && s.model.id === exact.id);
+      const outside = ctx.scopedModels.length && !ctx.scopedModels.some(s => s.model.provider === model.provider && s.model.id === model.id);
       return `${effective} [registry-valid; ${outside ? 'outside session picker scope; ' : ''}native preflight required]`;
     });
     return `${role.name}: ${result.join(' | ')}${role.panel && new Set(result).size === 1 ? ' [repeated samples, not multi-model diversity]' : ''}`;

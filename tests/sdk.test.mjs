@@ -22,7 +22,8 @@ test('real SDK loads packed resources and restores mode on tree navigation and r
   const manager = SessionManager.create(dir, join(iso.agentDir, 'sessions'));
   const { session } = await createAgentSession({ cwd: dir, agentDir: iso.agentDir, resourceLoader: loader, modelRuntime, settingsManager, sessionManager: manager });
   t.after(() => session.dispose());
-  await session.bindExtensions({});
+  const extensionErrors = [];
+  await session.bindExtensions({ onError: error => extensionErrors.push(error) });
   const scripted = modelRuntime.getModel('mstack-test', 'script/model');
   assert.ok(scripted);
   await session.setModel(scripted);
@@ -45,7 +46,20 @@ test('real SDK loads packed resources and restores mode on tree navigation and r
   assert.match(captures(iso.env).at(-1).system, /<pi-mstack-role-data>/);
   assert.match(JSON.stringify(captures(iso.env).at(-1).messages), /CUSTOM_WAKE/);
   mkdirSync(join(iso.agentDir, 'pstack'), { recursive: true });
+  for (const provider of ['team/custom', 'https://example.test/v1']) {
+    const custom = modelRuntime.getModel(provider, 'script/model');
+    assert.ok(custom);
+    await session.setModel(custom);
+    session.setThinkingLevel('off');
+    writeFileSync(join(iso.agentDir, 'pstack/models.json'), JSON.stringify({ version: 'pi-mstack/1', roles: { 'how explorer': `${provider}/script/model:off`, 'how explainer': 'missing/provider/model:off' } }));
+    await session.prompt('SDK_CUSTOM_PROVIDER');
+    const system = captures(iso.env).at(-1).system;
+    assert.ok(system.includes(`how explorer: ${provider}/script/model:off [registry-valid;`));
+    assert.ok(system.includes(`bug-fix: ${provider}/script/model:off [registry-valid;`));
+    assert.match(system, /how explainer: missing\/provider\/model:off \[BLOCKED, unavailable/);
+  }
   writeFileSync(join(iso.agentDir, 'pstack/models.json'), '{}');
   await session.prompt('SDK_INVALID_CONFIG');
   assert.match(captures(iso.env).at(-1).system, /Configuration blocked/);
+  assert.deepEqual(extensionErrors, []);
 });

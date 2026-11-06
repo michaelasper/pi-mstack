@@ -13,7 +13,7 @@ npm run typecheck
 npm test
 ```
 
-The optional `MSTACK_GIT_TESTS=1 npm test` check also inventories the pinned commit from `.cache/cursor-plugins`. The remaining importer tests create local Git objects without fetching. `MSTACK_KEEP_TEST_ARTIFACTS=1 npm run test:native` retains native completion records, provider requests, the child output, and native run state at the directory printed by the test.
+The optional `MSTACK_GIT_TESTS=1 npm test` check also inventories the pinned commit from `.cache/cursor-plugins`. The default suite inventories a hermetic Git fixture with nested paths, spaces, Unicode, and executable modes, without fetching or requiring a cached upstream repository. `MSTACK_KEEP_TEST_ARTIFACTS=1 npm run test:native` retains native completion records, provider requests, the child output, and native run state at the directory printed by the test.
 
 The suite requires Git, tar, Python 3, a POSIX terminal, and installed development dependencies. It uses standard `npm pack --ignore-scripts` without changing tarball contents.
 
@@ -23,7 +23,8 @@ The suite requires Git, tar, Python 3, a POSIX terminal, and installed developme
 | --- | --- |
 | Pinned source | `tests/importer.test.mjs` checks 573 records, 58 top-level skills, six executable source files, hashes, and modes. |
 | Update review | `tests/update.test.mjs` stages Git additions, removals, content changes, and mode changes. Template-only edits invalidate the review digest. |
-| Recovery | Importer tests cover live-lock exclusion, dead and foreign lock repair, two source-publication interruptions, generated backup recovery, metadata drift, and refusal to remove unowned files. |
+| Maintenance diagnostics | CLI tests reject malformed commands before filesystem changes. Acceptance tests report added, removed, and changed input paths and reject legacy or tampered inventories. |
+| Recovery | Importer tests cover caught owner-write faults, replacement-lock preservation, retained proposals, lost-proposal recovery, live-lock exclusion, dead and foreign lock repair, two source-publication interruptions, generated backup recovery, metadata drift, and refusal to remove unowned files. |
 | Rejection | Tests reject unsafe paths, arbitrary storage remaps, duplicate destinations, unsupported modes and schemas, missing mappings, stale roles, stale exact hashes, escaped template paths, and surviving model fallbacks. |
 | Standard package | `tests/packed.test.mjs` unpacks the ordinary tarball and runs its shipped offline check. Export reconstructs all original source paths, hashes, and modes, including `.gitignore`. Names, visibility, MIT attribution, and dormant exclusions are checked. |
 | Config and setup | `tests/runtime.test.mjs` and `tests/setup.test.mjs` exercise invalid config, full model IDs, ordered repeated panels, scope diagnostics, unsupported thinking, cancellation, declined confirmation, restrictive file mode, and stale-write refusal. The setup flow runs through actual RPC dialogs. |
@@ -31,7 +32,7 @@ The suite requires Git, tar, Python 3, a POSIX terminal, and installed developme
 | Collision refusal | RPC exercises suffixed extension commands and a competing user skill. The foreign skill's `off` argument is not consumed, and no mode event is written. |
 | Native dependencies | `tests/native.test.mjs` correlates an async child run ID with completion delivery and its bound output. A separate `monitor:done` custom wake must reach a later parent provider request. Captures assert role data and mode off on both native wakes. Enabled-mode custom wakes have separate SDK coverage, not enabled-mode native monitor/completion evidence. Cleanup checks require parent and child processes to exit. |
 | Native policy | Native tests observe rejected global scope, strict inheritance, per-agent scope, and thinking-ceiling requests. Explicit parent selection defeats a conflicting native agent model override. `tests/runtime-regressions.test.mjs` also observes trusted project policy replacement despite conflicting user settings. Doctor labels merged settings as observations. |
-| Runtime regressions | Real packed RPC tests preserve literal extension messages, enforce ASCII-space activation grammar, and refuse busy mode changes without persistence or queuing. Empty files and colon-bearing model IDs have targeted regressions. |
+| Runtime regressions | Real packed RPC tests preserve literal extension messages, enforce ASCII-space activation grammar, and refuse busy mode changes without persistence or queuing. Empty files and colon-bearing model IDs have targeted regressions. Custom slash and URL provider IDs have real SDK prompt tests for explicit and inherited selections. Unit tests block ambiguous combined IDs without substitution. |
 | Adapter prose | `tests/adapter.test.mjs` checks mandatory gate wording and exact replacement outcomes. These are prose regressions, not model-compliance evaluations. |
 
 ## Task-forwarding prototype

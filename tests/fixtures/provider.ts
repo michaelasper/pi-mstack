@@ -3,7 +3,7 @@ import { createAssistantMessageEventStream, getCurrentSystemPrompt, type Assista
 import type { ExtensionAPI } from '@earendil-works/pi-coding-agent';
 
 export default function provider(pi: ExtensionAPI) {
-  pi.registerProvider('mstack-test', {
+  for (const provider of ['mstack-test', 'team/custom', 'https://example.test/v1']) pi.registerProvider(provider, {
     api: 'mstack-scripted', baseUrl: 'http://127.0.0.1:1', apiKey: 'scripted-not-a-credential',
     models: ['script/model', 'other', 'no-reasoning'].map(id => ({ id, name: id, reasoning: id !== 'no-reasoning', input: ['text'], cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, contextWindow: 200000, maxTokens: 4096 })),
     streamSimple(model, context, options) {

@@ -8,7 +8,7 @@ import { enabledOnBranch } from '../extensions/pstack/index.ts';
 import { SessionManager } from '@earendil-works/pi-coding-agent';
 
 test('versioned role boundary preserves full IDs, ordered repeated panels and invalid choices', () => {
-  assert.deepEqual(splitSelector('provider/owner/model:high'), { kind: 'exact', provider: 'provider', id: 'owner/model', thinking: 'high' });
+  assert.deepEqual(splitSelector('provider/owner/model:high'), { kind: 'exact', combinedId: 'provider/owner/model', thinking: 'high' });
   assert.throws(() => parseConfig({ version: 1, roles: {} }), /Invalid/);
   assert.throws(() => parseConfig({ version: 'pi-mstack/1', roles: { unknown: 'auto' } }), /Unknown/);
   assert.throws(() => parseConfig({ version: 'pi-mstack/1', roles: { 'arena runners': [] } }), /Invalid/);
@@ -44,15 +44,15 @@ test('colon model IDs preserve all but a recognized final thinking suffix and re
   const model = { provider: 'openrouter', id, reasoning: true };
   for (const thinking of [undefined, 'high']) {
     const selector = `openrouter/${id}${thinking ? ':' + thinking : ''}`;
-    assert.deepEqual(splitSelector(selector), { kind: 'exact', provider: 'openrouter', id, thinking });
+    assert.deepEqual(splitSelector(selector), { kind: 'exact', combinedId: `openrouter/${id}`, thinking });
     const state = { kind: 'valid', config: parseConfig({ version: 'pi-mstack/1', roles: { 'how explorer': selector } }) };
     const ctx = { model, thinkingLevel: 'off', scopedModels: [], modelRegistry: { getAvailable: () => [model] } };
     assert.ok(roleData(state, ctx).includes(`how explorer: ${selector} [registry-valid;`));
     ctx.modelRegistry.getAvailable = () => [{ ...model, id: id.toUpperCase() }];
     assert.ok(roleData(state, ctx).includes(`how explorer: ${selector} [BLOCKED, unavailable or unauthenticated]`));
   }
-  assert.deepEqual(splitSelector('provider/model:high:off'), { kind: 'exact', provider: 'provider', id: 'model:high', thinking: 'off' });
-  for (const value of ['provider/', 'provider/:high', 'provider/model name', 'provider:model/id']) assert.throws(() => splitSelector(value), /Invalid/);
+  assert.deepEqual(splitSelector('provider/model:high:off'), { kind: 'exact', combinedId: 'provider/model:high', thinking: 'off' });
+  for (const value of ['provider/', 'provider/:high', 'provider/model name']) assert.throws(() => splitSelector(value), /Invalid/);
 });
 
 test('existing configuration lock refuses writes and explains safe manual recovery', t => {
@@ -100,4 +100,21 @@ test('picker scope and role status are distinct, explicit parent defeats omissio
   assert.match(table, /native preflight required/i);
   assert.match(policyStatus({ subagents: { maxThinking: 'off', modelScope: { enforce: true, strict: true, allow: ['provider/other'], agents: { worker: { allow: [] } } } } }, false, 'how explorer: provider/owner/model:high [registry-valid]'), /Potential thinking-ceiling conflict/);
   assert.match(policyStatus({ subagents: { modelScope: { enforce: true, strict: true } } }, false), /Scope matching is unverified/);
+});
+
+test('custom provider combined IDs resolve exactly and ambiguous IDs block', () => {
+  for (const provider of ['team/custom', 'https://example.test/v1', 'provider:region']) {
+    const model = { provider, id: 'owner/model:batch', reasoning: false };
+    const selector = `${provider}/${model.id}:off`;
+    const ctx = { model, thinkingLevel: 'off', scopedModels: [], modelRegistry: { getAvailable: () => [model] } };
+    const config = parseConfig({ version: 'pi-mstack/1', roles: { 'how explorer': selector, 'how explainer': 'https://missing.test/v1/model:off' } });
+    const table = roleData({ kind: 'valid', config }, ctx);
+    assert.ok(table.includes(`how explorer: ${selector} [registry-valid;`));
+    assert.ok(table.includes(`bug-fix: ${selector} [registry-valid;`));
+    assert.match(table, /https:\/\/missing.test\/v1\/model:off \[BLOCKED, unavailable/);
+    assert.deepEqual(modelChoices(ctx).map(m => parseConfig({ version: 'pi-mstack/1', roles: { 'how explorer': `${m.provider}/${m.id}:off` } })), [parseConfig({ version: 'pi-mstack/1', roles: { 'how explorer': selector } })]);
+  }
+  const models = [{ provider: 'team/custom', id: 'model', reasoning: false }, { provider: 'team', id: 'custom/model', reasoning: false }];
+  const ctx = { model: models[0], thinkingLevel: 'off', scopedModels: [], modelRegistry: { getAvailable: () => models } };
+  assert.match(roleData({ kind: 'valid', config: { version: 'pi-mstack/1', roles: {} } }, ctx), /BLOCKED, ambiguous combined model ID/);
 });

@@ -1,0 +1,3 @@
+Independent review complete. Verdict: **ACCEPT** this change, with final acceptance and publication parent-owned.
+
+All six improvements check out against the live diff and real behavior: exact combined registry selection with ambiguity blockers, CLI validation with read-only `generate --check`, owned owner-write cleanup, schema-2 drift diagnostics with preserved re-review policy, hermetic Git coverage, and no-delete retention with lost-proposal recovery. One optional P3 polish note (a `closeSync` in a finally block that could mask an original error; not reproduced). `generated/` and `port/` are byte-identical to baseline, acceptance hashes reproduce against the tree, and the targeted suites pass (14+15+1, zero failures). Full findings are in the report file above.

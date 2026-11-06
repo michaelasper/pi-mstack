@@ -92,3 +92,31 @@ test('generation is deterministic and refuses manual edits', t => {
   generate(dir, { repair: true });
   generate(dir, { check: true });
 });
+
+test('owner write failures clean only the newly owned lock', async t => {
+  const fs = (await import('node:fs')).default;
+  const { syncBuiltinESMExports } = await import('node:module');
+  const dir = fixture(t), lock = join(dir, '.mstack-lock');
+  const write = fs.writeFileSync;
+  try {
+    fs.writeFileSync = (file, ...args) => {
+      if (typeof file === 'number' || String(file).endsWith('/owner.json')) { write(file, '{partial'); throw Error('Injected owner write failure'); }
+      return write(file, ...args);
+    };
+    syncBuiltinESMExports();
+    assert.throws(() => acquireLock(dir, 'review'), /Injected owner write/);
+    assert.equal(fs.existsSync(lock), false);
+    fs.writeFileSync = (file, ...args) => {
+      if (typeof file === 'number') {
+        fs.renameSync(lock, lock + '-original');
+        fs.mkdirSync(lock);
+        write(join(lock, 'foreign'), 'retain');
+        throw Error('Injected replaced lock');
+      }
+      return write(file, ...args);
+    };
+    syncBuiltinESMExports();
+    assert.throws(() => acquireLock(dir, 'review'), /Injected replaced lock/);
+    assert.equal(readFileSync(join(lock, 'foreign'), 'utf8'), 'retain');
+  } finally { fs.writeFileSync = write; syncBuiltinESMExports(); }
+});
