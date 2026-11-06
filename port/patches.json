@@ -1,0 +1,456 @@
+{
+  "skills/arena/SKILL.md": {
+    "sourceHash": "d0adeca6c9b19d43d90ed8f0484f0ddd362f05006d628b8f4cc6c9b55fa4d2b3",
+    "edits": [
+      {
+        "old": "3. Pick the runners. Use the `arena runners` line in `~/.cursor/rules/pstack-models.mdc`. If the rule or that line is missing, default to one each on `claude-opus-5-5-xhigh` and `grok-4.7-xhigh-fast`. An `auto` or `inherit-parent` entry in this line means the parent model, so omit `model` for it. If the Task tool rejects a configured entry, run that seat on its family's default and say so. Families go by prefix: `claude-*`, and `grok-*` with `cursor-grok-*` and `composer-*`. A refused `composer-*` entry runs on `grok-4.7-xhigh-fast`. If the family has no default, or the Task tool rejects that default, use the closest valid slug of the same family from its error message, or drop the seat and say so when there is none. If dropped seats leave fewer than two runners, add runners until there are two, or one when the line has one entry. Run each added runner on a remaining runner's model, or omit `model` so it runs on the parent model when none remain, and say so. Spawn more runners when the arena covers multiple design directions. Use the same model N times when the work is generation-bound rather than judgment-sensitive. Pick each subagent's reasoning level and fast or standard speed for the job, per the Subagents section of the **poteto-mode** skill.",
+        "new": "3. Use `arena runners`. Read the native pi-mstack role-data section. Pass its exact effective selector as `model`, including thinking. Missing configuration inherits the active parent explicitly. Unavailable or rejected explicit selections block this step. Never translate a slug, omit a rejected selector, or substitute a family default."
+      },
+      {
+        "old": "After all Phase B candidates complete, choose one model from the `arena cross-judge pool` line in `~/.cursor/rules/pstack-models.mdc`. If the rule or that line is missing, choose from `claude-opus-5-5-xhigh` and `grok-4.7-xhigh-fast`. Spawn one readonly judge subagent. The judge is never from the parent's family, as Phase A step 3 defines families. Try only the entries from another family, in pool order. An `auto` or `inherit-parent` entry is the parent model, so it never judges. With the default pool, a Claude parent gets `grok-4.7-xhigh-fast`. A parent from any other family gets `claude-opus-5-5-xhigh` first. If the Task tool rejects an entry, use a valid slug of the same model at the closest level or speed from the error message, or move to the next entry when there is none. If no entry from another family runs, try the default pool's entries from another family the same way. If none of those runs, skip the judge, pick the base alone in Phase D, and say so. If you do not know the parent's model, try the pool's real slugs in pool order and say that the family check did not run. The judge sees the rubric and the candidates by path label, scores each criterion, and recommends a base with rationale. It runs in parallel with your reading in Phase D. Don't spawn it while candidates are still writing.",
+        "new": "After all Phase B candidates finish, read `arena cross-judge pool` from native pi-mstack role data. Choose one available entry from a demonstrably different family, in configured order. Inheritance is not a different-family choice. If no eligible judge exists, report the missing judge and block any dependent mandatory gate. Do not substitute a selector. The judge sees the rubric and candidate paths and recommends a base with scores. Run it alongside your reading in Phase D."
+      }
+    ]
+  },
+  "skills/how/SKILL.md": {
+    "sourceHash": "08a00079bb15b4258874ac3ff62d4ca7e94350ffedb521d0fd296dc9dd21904e",
+    "edits": [
+      {
+        "old": "Every spawn is a Task subagent with `subagent_type: generalPurpose` and `readonly: true`. Explorers use the `how explorer` line in the `pstack-models.mdc` rule (default `grok-4.7-xhigh-fast`), and every explainer uses the `how explainer` line (default `claude-opus-5-5-xhigh`). Set `model` to that line's value, or to the default if the rule or the line is missing. Leave `model` unset when the value is `auto` or `inherit-parent`. If the Task tool rejects a slug, use the default and say so. If it rejects the default, use the closest valid slug of the same family from its error message. Pick each subagent's reasoning level and fast or standard speed for the job, per the Subagents section of the **poteto-mode** skill.",
+        "new": "Use `how explorer` and `how explainer`. Read the native pi-mstack role-data section. Pass its exact effective selector as `model`, including thinking. Missing configuration inherits the active parent explicitly. Unavailable or rejected explicit selections block this step. Never translate a slug, omit a rejected selector, or substitute a family default."
+      }
+    ]
+  },
+  "skills/why/SKILL.md": {
+    "sourceHash": "144d42e7712723d763e607bc0a969e5f1cdf83ec7228519d87677cc534571bed",
+    "edits": [
+      {
+        "old": "Each spawn below names a role line in the `pstack-models.mdc` rule and a default. Set `model` to that line's value, or to the default if the rule or the line is missing. Leave `model` unset when the value is `auto` or `inherit-parent`. If the Task tool rejects a slug, use the default and say so. If it rejects the default, use the closest valid slug of the same family from its error message. Pick each subagent's reasoning level and fast or standard speed for the job, per the Subagents section of the **poteto-mode** skill.",
+        "new": "Use `why investigators` and `why synthesizer`. Read the native pi-mstack role-data section. Pass its exact effective selector as `model`, including thinking. Missing configuration inherits the active parent explicitly. Unavailable or rejected explicit selections block this step. Never translate a slug, omit a rejected selector, or substitute a family default."
+      },
+      {
+        "old": "Spawn one investigator per category that has a matching MCP, all in a single message so they run concurrently, each owning exactly one tool or MCP. Don't ask one agent to cover multiple MCPs. `model`: the `why investigators` line, default `grok-4.7-xhigh-fast`.",
+        "new": "Spawn one investigator per available evidence category, each owning one MCP provider. Use the exact `why investigators` selector. Explicitly load the provider in the agent definition. Do not invent unavailable evidence."
+      },
+      {
+        "old": "Spawn one synthesizer. `model`: the `why synthesizer` line, default `claude-opus-5-5-xhigh`. It gets:",
+        "new": "Spawn one synthesizer using the exact `why synthesizer` selector in native role data. It gets:"
+      }
+    ]
+  },
+  "skills/reflect/SKILL.md": {
+    "sourceHash": "9648df23cabaae99b78ed59cd93b6f35ebbf02105d228e3d0b5c3a3b3419d753",
+    "edits": [
+      {
+        "old": "Each reviewer and the synthesizer name a role line in the `pstack-models.mdc` rule and a default. Set `model` to that line's value, or to the default if the rule or the line is missing. Leave `model` unset when the value is `auto` or `inherit-parent`. If the Task tool rejects a slug, use the default and say so. If it rejects the default, use the closest valid slug of the same family from its error message. Pick each subagent's reasoning level and fast or standard speed for the job, per the Subagents section of the **poteto-mode** skill.",
+        "new": "Use `reflect tooling` and `reflect judgment, divergent, synthesizer`. Read the native pi-mstack role-data section. Pass its exact effective selector as `model`, including thinking. Missing configuration inherits the active parent explicitly. Unavailable or rejected explicit selections block this step. Never translate a slug, omit a rejected selector, or substitute a family default."
+      },
+      {
+        "old": "One `Task` call, `subagent_type: generalPurpose`, `model` from the `reflect judgment, divergent, synthesizer` line (default `claude-opus-5-5-xhigh`), agent mode (`readonly: false`). It spot-verifies citations through MCP, and readonly strips MCPs. Pass `references/synthesizer.md` verbatim, with each reviewer's full output inlined where marked. It returns an Accepted / Rejected / Backlog list.",
+        "new": "Run one native child using the exact `reflect judgment, divergent, synthesizer` selector. Its agent definition must load the MCP providers needed to verify citations. Pass `references/synthesizer.md` and bind its output. It returns an Accepted / Rejected / Backlog list."
+      },
+      {
+        "old": "| Judgment | `reflect judgment, divergent, synthesizer` | `claude-opus-5-5-xhigh` | `references/judgment-reviewer.md` |",
+        "new": "| Judgment | `reflect judgment, divergent, synthesizer` | Exact native role-data selector | `references/judgment-reviewer.md` |"
+      },
+      {
+        "old": "| Tooling | `reflect tooling` | `grok-4.7-xhigh-fast` | `references/tooling-reviewer.md` |",
+        "new": "| Tooling | `reflect tooling` | Exact native role-data selector | `references/tooling-reviewer.md` |"
+      },
+      {
+        "old": "| Divergent | `reflect judgment, divergent, synthesizer` | `claude-opus-5-5-xhigh` | `references/divergent-reviewer.md` |",
+        "new": "| Divergent | `reflect judgment, divergent, synthesizer` | Exact native role-data selector | `references/divergent-reviewer.md` |"
+      },
+      {
+        "old": "Never edit a skill under `plugins/cache/`. Before approval, show its destination, `.cursor/skills/<skill>/` or `~/.cursor/skills/<skill>/`. After approval, copy the skill folder there and edit the copy. Never open a PR or push.",
+        "new": "Never edit a skill under `plugins/cache/`. Before approval, show its destination, `.agents/skills/<skill>/` or `~/.agents/skills/<skill>/`. After approval, copy the skill folder there and edit the copy. Never open a PR or push."
+      },
+      {
+        "old": "- Substantive existing-skill edit (a new section, a new pattern table, more than ~10 lines): hand to Cursor's built-in `create-skill` skill and run its draft / test / iterate loop.",
+        "new": "- Substantive existing-skill edit (a new section, a new pattern table, more than ~10 lines): hand to the Pi authoring procedure in `poteto-mode/playbooks/authoring-a-skill.md` under the generated skills directory and run its draft / test / iterate loop."
+      },
+      {
+        "old": "- `tune description: <skill path>` (the skill exists but didn't trigger when it should have): hand to `create-skill` and run its description-optimization loop.",
+        "new": "- `tune description: <skill path>` (the skill exists but didn't trigger when it should have): hand to the Pi authoring procedure in `poteto-mode/playbooks/authoring-a-skill.md` under the generated skills directory and run its description-optimization loop."
+      },
+      {
+        "old": "- `new skill via create-skill: <kebab-name>`: hand creation to `create-skill`. Do not invent the shape ad hoc.",
+        "new": "- `new Pi skill: <kebab-name>`: hand creation to the Pi authoring procedure in `poteto-mode/playbooks/authoring-a-skill.md` under the generated skills directory. Do not invent the shape ad hoc."
+      },
+      {
+        "old": "Before fanning out, find this conversation's transcript in the `agent-transcripts/` directory the system prompt names. Do not glob across `~/.cursor/projects/*/`. That crosses workspace boundaries and reads private chats from unrelated projects.\n\n```bash\nls -t <agent-transcripts>/*.jsonl <agent-transcripts>/*/*.jsonl <agent-transcripts>/*/subagents/*.jsonl 2>/dev/null | head -10\n```\n\nThat covers the legacy flat (`<id>.jsonl`), current nested (`<id>/<id>.jsonl`), and subagent (`<parent>/subagents/<child>.jsonl`) layouts. For each candidate, read the first JSONL line. Take the file whose `message.content[0].text` contains the conversation's opening user prompt. If none matches, pass a tight digest of the session instead.\n",
+        "new": "Use the Pi adapter's session acquisition procedure before reading history. Scope reads to the current Pi session or exact authorized retained session paths supplied by the operator or a retained native run record. Cross-chat mining without an authorized corpus is blocked. Never search a sessions tree or use Cursor transcripts as a fallback. If no transcript is available, a digest of the visible current conversation may support labeled provisional findings, not transcript verification.\n"
+      }
+    ]
+  },
+  "skills/swarm/SKILL.md": {
+    "sourceHash": "fea6bfbbf21e067a4e2d2ebab034bc3af508118e9df1abc9d2ba040d58a6df3a",
+    "edits": [
+      {
+        "old": "3. Pick the worker model from the `swarm workers` line in `~/.cursor/rules/pstack-models.mdc`. If the rule or that line is missing, use `grok-4.7-xhigh-fast`. For `auto` or `inherit-parent`, omit `model` so the workers run on the parent model. If the Task tool rejects a slug, use the default and say so. If it rejects the default, use the closest valid slug of the same family from its error message. For a model race, name each arm's model up front. Pick each subagent's reasoning level and fast or standard speed for the job, per the Subagents section of the **poteto-mode** skill.",
+        "new": "3. Use `swarm workers`. Read the native pi-mstack role-data section. Pass its exact effective selector as `model`, including thinking. Missing configuration inherits the active parent explicitly. Unavailable or rejected explicit selections block this step. Never translate a slug, omit a rejected selector, or substitute a family default."
+      },
+      {
+        "old": "Spawn all N workers in one message with `subagent_type: generalPurpose`, `environment: \"cloud\"`, `run_in_background: true`, and the step 3 model, left unset for `auto` or `inherit-parent`. Use `environment: \"local\"` only when the worker needs access to something on the user's computer.",
+        "new": "Spawn N native workers asynchronously using the exact step 3 effective selector, including explicit parent inheritance. Use worktree isolation when a clean committed repository permits it. Worktrees do not provide cloud isolation. Keep local-only requirements explicit."
+      }
+    ]
+  },
+  "skills/poteto-mode/SKILL.md": {
+    "sourceHash": "ee1848c973a112026f09ba12ea7a13c1654006e7bf170d1c34bf5d5816bc439b",
+    "edits": [
+      {
+        "old": "**Defaults for every `Task` call.** `run_in_background: true` (a steer or resume of a running agent too, because a foreground call holds your turn while other reports wait), agent mode (readonly strips MCP), file pointers not inlined context, explicit model per role (configurable via `/setup-pstack`. Defaults `grok-4.7-xhigh-fast` for code, `claude-opus-5-5-xhigh` for prose and judgment). Code delegates tier by difficulty. The hardest changes (cross-cutting design, gnarly concurrency, subtle algorithms) go to your strongest judgment model (`claude-opus-5-5-xhigh`), whether the task needs judgment on vague intent or is a precisely specified sequence of steps to execute to the letter. Trivial mechanical edits go to your fast code model. Per-role lines in the `/setup-pstack` rule override these defaults and the model choices in the routed skills (`how`, `why`, `arena`, `swarm`, `architect`, `interrogate`, `reflect`). A role with no line keeps its default, and a role line of `inherit-parent` or `auto` runs that role on the parent chat model (omit Task `model`). Each code playbook's configured model comes from its line (`feature, refactoring`, `bug-fix`, `perf-issue`, or `hillclimb`), and the hardest changes read `hardest tasks`. Prose and judgment read `judgment and prose`.",
+        "new": "**Delegation defaults.** Use native asynchronous `subagent` calls. Pass absolute file pointers and bind retained reports with `output`. Read the native pi-mstack role-data section. Pass its exact effective selector as `model`, including thinking. Missing configuration inherits the active parent explicitly. Unavailable or rejected explicit selections block this step. Never translate a slug, omit a rejected selector, or substitute a family default. Code playbooks use `feature, refactoring`, `bug-fix`, `perf-issue`, or `hillclimb`. Difficult changes use `hardest tasks`. Prose uses `judgment and prose`. Verification uses `swarm workers`."
+      },
+      {
+        "old": "**Match the model to the job.** Before each spawn, start from the role's line or default and pick the reasoning level and speed the job needs. The `/setup-pstack` budget sets each role's starting level, xhigh by default. Raise it one step, up to max, for the hardest or subtlest work. Lower it one step for judgment and two or more steps for routine work. Use fast mode only when the job is urgent, meaning CI or trunk is red or a person is blocked on the result right now. Otherwise use standard speed, the same slug without `-fast`. Verification is the exception and stays on the `swarm workers` model and speed (`grok-4.7-xhigh-fast` by default). Change only the effort level and whether the slug is fast, and keep the family the role names, so a diverse panel stays diverse. If the family has no slug at that level and speed, use its nearest slug. A role on `auto` or `inherit-parent` stays on the parent model. If the Task tool rejects the adjusted slug, do not try another adjusted slug. Use the role's line or default and say so. If the Task tool rejects that too, continue with the calling skill's fallback. A slug counts as rejected once a Task error says that the model is not valid, or leaves the slug out of its list of valid slugs. Never pass a rejected slug, and skip any fallback whose slug is already rejected. When the calling skill has no fallback, use the closest valid slug of the role's family from the error's list of valid slugs, or omit `model` so the subagent runs on the parent model when the list has none. When the calling skill's fallback runs out of slugs without saying what to do next, omit `model` too. Say so in both cases.",
+        "new": "**Model selection.** Read the native pi-mstack role-data section. Pass its exact effective selector as `model`, including thinking. Missing configuration inherits the active parent explicitly. Unavailable or rejected explicit selections block this step. Never translate a slug, omit a rejected selector, or substitute a family default. Native preflight remains authoritative. Report actual attribution. Repeated parent selections are samples, not a diverse panel."
+      },
+      {
+        "old": "# Poteto mode",
+        "new": "# Poteto mode\n\n`/poteto-mode` enables persistent mode without a model call. `/poteto-mode off` disables it. Use `/skill:poteto-mode <task>` for a task in every host mode. The extension restores only active-branch events. Short task-bearing commands are not supported. Role data remains available while mode is off."
+      },
+      {
+        "old": "- Any prose surface, your reply to the user included \u2192 the **unslop** skill. Write the reply per **Writing the reply**. Agent-facing prose also follows the **create-skill** skill (Cursor's built-in for authoring SKILL.md files).",
+        "new": "- Any prose surface, your reply to the user included \u2192 the **unslop** skill. Write the reply per **Writing the reply**. Agent-facing prose also follows the Pi authoring procedure in `playbooks/authoring-a-skill.md`."
+      }
+    ]
+  },
+  "skills/poteto-mode/playbooks/bug-fix.md": {
+    "sourceHash": "66e26542dad131cfd7df80ac0cdf81ed4d85e7b5e3f0eb65b933888760c4831f",
+    "edits": [
+      {
+        "old": "3. Plan the fix. If it crosses a function boundary, `architect` first. Delegate implementation to a subagent using your configured bug-fix model (default `grok-4.7-xhigh-fast`) with a specific scope.",
+        "new": "3. Plan the fix. If it crosses a function boundary, `architect` first. Delegate implementation to a subagent using your configured bug-fix model (use the exact native role-data selector) with a specific scope."
+      }
+    ]
+  },
+  "skills/poteto-mode/playbooks/multi-phase-plan.md": {
+    "sourceHash": "2b4fbb547e5ccfe46d1279d714eb0199d28e995f06bdc4eda4afbca9221fbbe6",
+    "edits": [
+      {
+        "old": "**Verification.** Tests alone are not sufficient verification. A PR is verified only when its unit, live, and perf boxes are all checked (the **prove-it-works** principle skill). That sentence is the verification rule. Every verification block opens with it. The live block is mandatory. Ten lanes at the PR head drive the real surface through its control skill, per the **swarm** skill, on the `swarm workers` model (default `grok-4.7-xhigh-fast`). Each lane is one box with a concrete scenario, the screenshot it saves, and its pass predicate. One lane is the **Regression lane against trunk.** It runs the same load-bearing scenario on trunk and head. If trunk does not have the feature, the lane records that fact and gates the behavior the diff adds plus the end state the user waits for instead of inventing a trunk result. The perf gate is dual-sided. Trunk and head must both produce the named metric. If trunk lacks the feature, also isolate the work the diff adds and set an absolute budget for that work plus the end-to-end state the user waits for. Do not claim a ratio between unlike scenarios. The perf block names the metric, the interleaved probe, the trunk baseline measured first, and the rule with the number that fails. A PR that changes an interaction is review-gated. The operator reviews it in chat with screenshots and a video before merge. A PR that changes no interaction writes `**Review gate.** None. <PR id> is not review-gated.` and no boxes under it.",
+        "new": "**Verification.** Tests alone are not sufficient verification. A PR is verified only when its unit, live, and perf boxes are all checked (the **prove-it-works** principle skill). That sentence is the verification rule. Every verification block opens with it. The live block is mandatory. Ten lanes at the PR head drive the real surface through its control skill, per the **swarm** skill, on the `swarm workers` model (use the exact native role-data selector). Each lane is one box with a concrete scenario, the screenshot it saves, and its pass predicate. One lane is the **Regression lane against trunk.** It runs the same load-bearing scenario on trunk and head. If trunk does not have the feature, the lane records that fact and gates the behavior the diff adds plus the end state the user waits for instead of inventing a trunk result. The perf gate is dual-sided. Trunk and head must both produce the named metric. If trunk lacks the feature, also isolate the work the diff adds and set an absolute budget for that work plus the end-to-end state the user waits for. Do not claim a ratio between unlike scenarios. The perf block names the metric, the interleaved probe, the trunk baseline measured first, and the rule with the number that fails. A PR that changes an interaction is review-gated. The operator reviews it in chat with screenshots and a video before merge. A PR that changes no interaction writes `**Review gate.** None. <PR id> is not review-gated.` and no boxes under it."
+      }
+    ]
+  },
+  "skills/poteto-mode/playbooks/hillclimb.md": {
+    "sourceHash": "942c1565b75ad02a2cb6230dd7c1ebd87e19f59a00319ebac2b6616007bf018f",
+    "edits": [
+      {
+        "old": "   - Hand the change to a subagent using your configured hillclimb model (default `grok-4.7-xhigh-fast`) with a tight scope. Pick each subagent's reasoning level and fast or standard speed for the job, per the Subagents section. Supervise and review the diff rather than typing it (the **guard-the-context-window** principle skill). When several independent hypotheses are live, fan them to parallel subagents, each in its own worktree (the **separate-before-serializing-shared-state** principle skill).",
+        "new": "   - Hand the change to a subagent using your configured hillclimb model (use the exact native role-data selector) with a tight scope. Pick each subagent's reasoning level and fast or standard speed for the job, per the Subagents section. Supervise and review the diff rather than typing it (the **guard-the-context-window** principle skill). When several independent hypotheses are live, fan them to parallel subagents, each in its own worktree (the **separate-before-serializing-shared-state** principle skill)."
+      }
+    ]
+  },
+  "skills/poteto-mode/playbooks/feature.md": {
+    "sourceHash": "af8ce700b99953741cb547e34308fde0cf6b98ce67e1652c800d0deedf53aba1",
+    "edits": [
+      {
+        "old": "4. Delegate code-writing to a subagent using your configured feature model (default `grok-4.7-xhigh-fast`) with a specific scope (file paths, named data shape and its organizing structure per **principle-model-the-domain**, a state machine over scattered booleans, a table/registry over branching, a typed model over repeated shape assumptions, chosen before the delegate writes logic, and success criteria). Pick each subagent's reasoning level and fast or standard speed for the job, per the Subagents section. When the implementation admits multiple valid shapes (error handling, abstraction layer, test structure), delegate via the **arena** skill instead so the runners surface the alternatives and the cross-judge guards the pick. Mandatory: no skip-with-reason escape, and Laziness Protocol does not override it (the gain is review separation, not lines saved). A subagent forbidden to spawn satisfies this by owning the diff directly with the same review separation. No \"standing by\" reply that waits on a nested agent. Comments per **Comments**. Surgical edits, re-ground against the source for upstream-derived files. Port shared-primitive improvements to all consumers and verify each. Commit liberally.",
+        "new": "4. Delegate code-writing to a subagent using your configured feature model (use the exact native role-data selector) with a specific scope (file paths, named data shape and its organizing structure per **principle-model-the-domain**, a state machine over scattered booleans, a table/registry over branching, a typed model over repeated shape assumptions, chosen before the delegate writes logic, and success criteria). Pick each subagent's reasoning level and fast or standard speed for the job, per the Subagents section. When the implementation admits multiple valid shapes (error handling, abstraction layer, test structure), delegate via the **arena** skill instead so the runners surface the alternatives and the cross-judge guards the pick. Mandatory: no skip-with-reason escape, and Laziness Protocol does not override it (the gain is review separation, not lines saved). A subagent forbidden to spawn satisfies this by owning the diff directly with the same review separation. No \"standing by\" reply that waits on a nested agent. Comments per **Comments**. Surgical edits, re-ground against the source for upstream-derived files. Port shared-primitive improvements to all consumers and verify each. Commit liberally."
+      }
+    ]
+  },
+  "skills/poteto-mode/playbooks/perf-issue.md": {
+    "sourceHash": "c12aa2f82de7651a11676a3d5fea168f539b7f0faaa3a501d279255dd2a469c8",
+    "edits": [
+      {
+        "old": "3. Plan the fix from the trace. If it crosses a function boundary, `architect` first. Delegate implementation to a subagent using your configured perf-issue model (default `grok-4.7-xhigh-fast`). Pick each subagent's reasoning level and fast or standard speed for the job, per the Subagents section. Review the diff. Capture a post-fix trace.",
+        "new": "3. Plan the fix from the trace. If it crosses a function boundary, `architect` first. Delegate implementation to a subagent using your configured perf-issue model (use the exact native role-data selector). Pick each subagent's reasoning level and fast or standard speed for the job, per the Subagents section. Review the diff. Capture a post-fix trace."
+      }
+    ]
+  },
+  "skills/poteto-mode/playbooks/refactoring.md": {
+    "sourceHash": "0f5dd38113379ea8cf61e2182eca0a7478eea9a869eb40c2dddab3335aeca197",
+    "edits": [
+      {
+        "old": "5. Move in small behavior-preserving steps, each keeping the pin green. For API reshapes, migrate every caller and delete the old API in the same wave (**principle-migrate-callers-then-delete-legacy-apis**). No compatibility shims, no parallel old-and-new paths. Spot-check every rename against the actual files. Renames silently miss usages in strings, prose, and back-references. Delegate the mechanical edits to a subagent using your configured refactoring model (default `grok-4.7-xhigh-fast`) with a specific scope (file paths, the names being moved, the behavior to hold). Pick each subagent's reasoning level and fast or standard speed for the job, per the Subagents section.",
+        "new": "5. Move in small behavior-preserving steps, each keeping the pin green. For API reshapes, migrate every caller and delete the old API in the same wave (**principle-migrate-callers-then-delete-legacy-apis**). No compatibility shims, no parallel old-and-new paths. Spot-check every rename against the actual files. Renames silently miss usages in strings, prose, and back-references. Delegate the mechanical edits to a subagent using your configured refactoring model (use the exact native role-data selector) with a specific scope (file paths, the names being moved, the behavior to hold). Pick each subagent's reasoning level and fast or standard speed for the job, per the Subagents section."
+      }
+    ]
+  },
+  "skills/setup-pstack/SKILL.md": {
+    "sourceHash": "df8ad3638a4dca31fb4b43d58056f0299f23ad0530614166d55ef989062b41ec",
+    "template": "setup.md"
+  },
+  "agents/poteto-agent.md": {
+    "sourceHash": "979f18abd000d185a0b4c41a2a4111c0910596a7f5c81cbb571885bc721b2bf7",
+    "template": "poteto-agent.md"
+  },
+  "agents/comment-sicko.md": {
+    "sourceHash": "3e239e40b7b4b9beb2cf7f3ccc57f2388eb8b69bd1ba8ae888ef87ef6e0e2116",
+    "template": "comment-sicko.md"
+  },
+  "skills/make-bot-ui/SKILL.md": {
+    "sourceHash": "ad19d0bc6764287ec08c2521701974e7dac941f72e4d0fe81a24f4614494586f",
+    "template": "bot-gap.md"
+  },
+  "skills/poteto-mode/scripts/worktree-audit.sh": {
+    "sourceHash": "06be04b38346ded24ce761d373726f98cd9b9737f20ec98214e88b5f08f521b8",
+    "edits": [
+      {
+        "old": "# Transcripts dir: ~/.cursor/projects/<slugified-repo-path>/agent-transcripts.\nslug=$(printf '%s' \"$main_wt\" | sed 's#^/##; s#/#-#g')\ntranscripts=\"$HOME/.cursor/projects/$slug/agent-transcripts\"\n",
+        "new": "# Pi history requires an explicit workspace-scoped directory.\ntranscripts=\"${PSTACK_WORKSPACE_SESSIONS:-}\"\nif [ -n \"$transcripts\" ]; then\n\t[ -d \"$transcripts\" ] && [ -f \"$transcripts/.pstack-workspace\" ] && [ \"$(cat \"$transcripts/.pstack-workspace\")\" = \"$main_wt\" ] || { echo \"error: history needs a .pstack-workspace marker matching $main_wt\" >&2; exit 2; }\nfi\n"
+      }
+    ]
+  },
+  "skills/statechart/scripts/test/render.test.ts": {
+    "sourceHash": "9cb369e5f4c464ca540ccc3de4fdd76670b84e54f06955ccb46908826579ac23",
+    "edits": [
+      {
+        "old": "    [\"install\", \"--prefix\", dir, \"--no-audit\", \"--no-fund\", \"--save-exact\", ...packages],",
+        "new": "    [\"install\", \"--ignore-scripts\", \"--prefix\", dir, \"--no-audit\", \"--no-fund\", \"--save-exact\", ...packages],"
+      }
+    ]
+  },
+  "skills/poteto-mode/scripts/bootstrap.ts": {
+    "sourceHash": "ccd2ed08fd9da9d0d942e5f2491cfc74bb92d8a08fa51755e0da1ac8de287361",
+    "edits": [
+      {
+        "old": "    [process.execPath, \"install\", \"--frozen-lockfile\"],",
+        "new": "    [process.execPath, \"install\", \"--ignore-scripts\", \"--frozen-lockfile\"],"
+      }
+    ]
+  },
+  "skills/why/references/synthesizer-prompt.md": {
+    "sourceHash": "11c62671aa7b7a6e3d36929ffe2b59bf95e6ca664eee4d93e6ee527dd3390ddb",
+    "edits": [
+      {
+        "old": "[PR #123](url)",
+        "new": "{verified PR link}"
+      }
+    ]
+  },
+  "skills/architect/SKILL.md": {
+    "sourceHash": "31f8e97a52bfa5432edd61f68ade2a8632ef0bacbc2d2a6802d7a0e6821944ac",
+    "edits": [
+      {
+        "old": "Take the runners from the `architect runners` line in the `pstack-models.mdc` rule, in place of the `arena runners` line. If the rule or that line is missing, use `claude-opus-5-5-xhigh` and `grok-4.7-xhigh-fast`. Alias and rejected entries follow the runner rules in the **arena** skill's Phase A.",
+        "new": "Read `architect runners` from the native pi-mstack role-data section in place of `arena runners`. Preserve the configured ordered panel. Pass exact effective selectors, including resolved parent inheritance. Unavailable or rejected selectors block this step without substitution."
+      }
+    ]
+  },
+  "skills/poteto-help/SKILL.md": {
+    "sourceHash": "768368881379d688c4e3bbdae55dd2d7874fde98a258324d3527de1bf09f9bd1",
+    "edits": [
+      {
+        "old": "2. Run [`/setup-pstack`](../setup-pstack/SKILL.md). It asks for a reasoning budget, maps a model to each role, and writes a rule. The rule applies to new chats. Then it offers once each to generate a verification skill and a formal verification skill for the project, unless the project already has one.",
+        "new": "2. Run [`/setup-pstack`](../setup-pstack/SKILL.md). It offers authenticated models within the session picker scope, configures exact role selectors and ordered panels, and atomically saves only after confirmation. There is no Cursor budget conversion."
+      },
+      {
+        "old": "If cost is the worry, say where the tokens go and how to spend fewer. pstack spends extra tokens on subagents and review panels. Rerun `/setup-pstack` and pick a smaller budget or cheaper models. A role set to `auto` or `inherit-parent` runs on the chat's model, which saves tokens when the chat runs on Auto or a cheaper model. A shorter panel list runs fewer subagents, one for each entry. Save `/poteto-mode` for work that needs rigor.",
+        "new": "If cost is the worry, explain that subagents and review panels consume additional tokens. Run `/setup-pstack` to choose exact available models and supported thinking levels. Shorter ordered panels launch fewer children. Inheritance resolves to the active parent explicitly. Repeated parent models are samples, not diverse-model review."
+      },
+      {
+        "old": "pstack is built for Cursor, and it also installs in Claude Code with `/plugin marketplace add cursor/plugins`, then `/plugin install pstack@cursor-plugins`. There, each command takes a `pstack:` prefix, such as `/pstack:poteto-mode`. The [Claude Code adapter](../../docs/harness/claude-code.md) maps the Cursor names, and a step that needs a Cursor-only feature, such as Bugbot or Automations, is skipped with a one-line note.",
+        "new": "This generated package runs on Pi. Install pi-loop and pi-subagents separately. The source snapshot includes historical Cursor and Claude instructions, not native behavior. Missing mandatory services block dependent actions. Optional omissions may be labeled missing only when no required gate depends on them."
+      },
+      {
+        "old": "- No `~/.cursor/rules/pstack-models.mdc` means `/setup-pstack` hasn't run for this user, so every role uses its default model.",
+        "new": "- Missing native pi-mstack configuration means all roles inherit the current parent explicitly. Read native role data. Invalid configuration blocks affected workflows."
+      },
+      {
+        "old": "- Later: answer their question, and add one line saying every role keeps its default model until they run `/setup-pstack`.",
+        "new": "- Later: answer their question and explain that unconfigured roles inherit the active parent explicitly."
+      },
+      {
+        "old": "1. Install with `/add-plugin pstack` in chat, or from Customize in the sidebar.",
+        "new": "1. Install `npm:@trevonistrevon/pi-loop@0.7.19`, `npm:pi-subagents@0.86.0`, and this local package with three explicit `pi install` commands."
+      },
+      {
+        "old": "3. Start a real task with `/poteto-mode`, a goal, and a check that can pass or fail.",
+        "new": "3. Start a real task with `/skill:poteto-mode`, a goal, and a check that can pass or fail."
+      },
+      {
+        "old": "Whether `/poteto-mode` stays on depends on how the user starts it:\n\n- Enter on `/poteto-mode` attaches the skill to one message. It fades as the chat moves on.\n- Option+Enter on Mac or Alt+Enter on Windows, or Use as Mode from the skill entry, makes it a Custom Mode. It stays in context every turn until the user exits the mode, and it stays out of casual turns.\n- Cursor's docs list Custom Modes in the Agents Window and the CLI. Elsewhere, start each new task with `/poteto-mode`.\n\nLink [Cursor's skills docs](https://cursor.com/docs/skills) when this comes up. Mid-chat, \"new task\" makes the mode match a fresh playbook. `/poteto-mode` already uses `poteto-agent` for the subagents its playbook steps spawn. To get the same style from a subagent of your own, spawn it with `subagent_type: \"poteto-agent\"`.\n\n",
+        "new": "Bare `/poteto-mode` enables branch-local persistent mode without inference. `/poteto-mode off` and `/skill:poteto-mode off` disable it. Use `/skill:poteto-mode <task>` for task-bearing activation. There is no Custom Mode gesture. Short task-bearing commands are unsupported in one-shot modes. Role data applies independently of mode.\n\n"
+      },
+      {
+        "old": "A message that asks for work, such as \"use pstack to fix this bug\", is not a help question. Read [`poteto-mode`](../poteto-mode/SKILL.md), do the work under it, and mention once that a Custom Mode keeps it on.",
+        "new": "A message that asks for work, such as \"use pstack to fix this bug\", is not a help question. Read [`poteto-mode`](../poteto-mode/SKILL.md), do the work under it, and explain that branch-local mode persists until explicitly disabled."
+      },
+      {
+        "old": "This file maps questions to the skills and guide pages that hold the answers. Those files own the details. Read the file you route to before you quote it, and trust it when it disagrees with this map. The links here point into the installed plugin, which the user may not be able to open, so give the user the file's public copy: `https://github.com/cursor/plugins/blob/main/pstack/` followed by its path.",
+        "new": "Read the generated file you route to before quoting it. Shipped upstream docs are historical and do not override the Pi adapter. Link generated resources locally or use the full pinned commit from upstream/manifest.json for source citations, never main."
+      },
+      {
+        "old": "| The mode stopped applying after a few turns | It was started with Enter. Start it as a Custom Mode, or start each task with `/poteto-mode`. |",
+        "new": "| The mode stopped applying after a few turns | Check `/pstack doctor` and the active session branch. Enable `/poteto-mode` on that branch. |"
+      },
+      {
+        "old": "| A new model choice had no effect | The rule from `/setup-pstack` applies to new chats. Start one. |",
+        "new": "| A new model choice had no effect | Inspect `/pstack doctor` for config errors, scope, or native policy blockers. Native role data reloads before every run. |"
+      },
+      {
+        "old": "- `/loop` and `/create-skill` are Cursor built-ins.",
+        "new": "- Scheduling uses native pi-loop tools. Skill authoring uses the Pi authoring procedure in `poteto-mode/playbooks/authoring-a-skill.md` under the generated skills directory."
+      }
+    ]
+  },
+  "skills/poteto-mode/playbooks/authoring-a-skill.md": {
+    "sourceHash": "f6a13a445c360b48d6cd72780ac01955f45b82826476efe0e67c7559329407aa",
+    "edits": [
+      {
+        "old": "1. Use the **create-skill** skill (Cursor's built-in for authoring SKILL.md files).\n2. Validate the skill: frontmatter has `name` and `description`, referenced files exist, cross-skill links resolve.\n3. Test cases if structural. Skip if subjective.\n4. Run **Opening a PR**.",
+        "new": "1. Choose the scope before writing. Use `.agents/skills/<name>/SKILL.md` in the project or `~/.agents/skills/<name>/SKILL.md` for a personal skill. Preserve an existing Pi-discovered destination. Never edit package caches or generated package resources. Show the destination and honor the calling workflow's approval gate.\n2. Write YAML frontmatter with `name` and `description`. Use a lowercase hyphenated name matching the directory, at most 64 characters. Keep the description a single YAML scalar, at most 1024 characters, stating what the skill does and when to use it. Use `disable-model-invocation: true` for explicit-only skills.\n3. Write direct, ordered instructions with concrete inputs, commands, expected results, failure handling, and retained evidence paths. Keep supporting files beside the skill and link them relative to its directory. Apply the **unslop** skill. Do not invent unavailable tools or weaken mandatory gates.\n4. Validate frontmatter, referenced files, and cross-skill links. Run `/reload` in Pi from the project, inspect discovery warnings, and invoke `/skill:name` with a representative task. Resolve name collisions before claiming the intended skill loaded.\n5. For structural workflows, run a positive case and a negative or missing-capability case. Retain actual tool results and fix failures before repeating. For description tuning, try matching and non-matching prompts and inspect whether the skill was loaded. Lexical checks are not model-compliance evidence. Subjective mode prose needs the user's review rather than a fabricated benchmark. Report unrun cases as limitations.\n6. Follow the calling workflow's delivery and approval rules. Run **Opening a PR** only when authorized. Reflect's no-push rule still applies."
+      }
+    ]
+  },
+  "skills/maintain-verification-skill/SKILL.md": {
+    "sourceHash": "515c0eaa054b3f6be1b1fb06f2c2f173c80fddb58bbcac57576f89c479bc68e8",
+    "edits": [
+      {
+        "old": "0. **Locate the target.** Find the verification skill to maintain: the project-local skill whose body has launch/drive sections and a feature map (usually `.cursor/skills/verify-*/`). Several candidates \u2192 ask which one; none \u2192 stop and point at `/create-verification-skill` instead of inventing a target.",
+        "new": "0. **Locate the target.** Find the verification skill to maintain: the project-local skill whose body has launch/drive sections and a feature map (usually `.agents/skills/verify-*/`). Several candidates \u2192 ask which one; none \u2192 stop and point at `/create-verification-skill` instead of inventing a target."
+      }
+    ]
+  },
+  "skills/automate-me/SKILL.md": {
+    "sourceHash": "30b35f3628c4fd8c11af0ada06d14cdc3b28901810caca2480f627d4d21acfbe",
+    "edits": [
+      {
+        "old": "description: \"Use for \\\"automate me\\\", \\\"create/update/refresh my -mode skill\\\", \\\"turn/capture my preferences or working style into a skill\\\", or wanting agents to follow how the user works. Drafts or revises a personal -mode skill via create-skill + unslop, optionally pulling fresh evidence from recent transcripts.\"",
+        "new": "description: \"Use for \\\"automate me\\\", \\\"create/update/refresh my -mode skill\\\", \\\"turn/capture my preferences or working style into a skill\\\", or wanting agents to follow how the user works. Drafts or revises a personal -mode skill with Pi authoring guidance and unslop, optionally pulling fresh evidence from recent transcripts.\""
+      },
+      {
+        "old": "This skill orchestrates three others: an inline mining pass (see step 1), Cursor's built-in `create-skill` (authoring), and the **unslop** skill (prose discipline). It sequences them. It doesn't replace them.",
+        "new": "This skill orchestrates three others: an inline mining pass (see step 1), the Pi authoring procedure in `poteto-mode/playbooks/authoring-a-skill.md` under the generated skills directory, and the **unslop** skill (prose discipline). It sequences them. It doesn't replace them."
+      },
+      {
+        "old": "Look recursively for `.cursor/skills/**/*-mode/SKILL.md` and `~/.cursor/skills/*-mode/SKILL.md` matching the user's handle. Mode skills can live in a personal category directory (`.cursor/skills/<handle>/`), not only at the top level. If one exists, confirm intent with `AskQuestion` (unless they already said \"update my skill\" or similar):",
+        "new": "Look recursively for `.agents/skills/**/*-mode/SKILL.md` and `~/.agents/skills/*-mode/SKILL.md` matching the user's handle. Mode skills can live in a personal category directory (`.agents/skills/<handle>/`), not only at the top level. If one exists, confirm intent with `AskQuestion` (unless they already said \"update my skill\" or similar):"
+      },
+      {
+        "old": "Use Cursor's built-in `create-skill` skill to author the skill. Placement:",
+        "new": "Use the Pi authoring procedure in `poteto-mode/playbooks/authoring-a-skill.md` under the generated skills directory to author the skill. Placement:"
+      },
+      {
+        "old": "- Path: preserve an existing mode skill's category. For a new mode, use `.cursor/skills/<handle>/<handle>-mode/SKILL.md` when the repo has an established personal category for that handle. Otherwise default to `.cursor/skills/<handle>-mode/SKILL.md` in the project (or `~/.cursor/skills/<handle>-mode/` if the user prefers a personal skill).",
+        "new": "- Path: preserve an existing mode skill's category. For a new mode, use `.agents/skills/<handle>/<handle>-mode/SKILL.md` when the repo has an established personal category for that handle. Otherwise default to `.agents/skills/<handle>-mode/SKILL.md` in the project (or `~/.agents/skills/<handle>-mode/` if the user prefers a personal skill)."
+      },
+      {
+        "old": "- Frontmatter formatting: follow `create-skill`'s YAML rules. Keep `description` as one YAML scalar. Quote it or use `description: >-` with indented continuation lines when punctuation or wrapping requires it.",
+        "new": "- Frontmatter formatting: follow Pi frontmatter rules. Keep `description` as one YAML scalar. Quote it or use `description: >-` with indented continuation lines when punctuation or wrapping requires it."
+      },
+      {
+        "old": "Apply the **unslop** skill and `create-skill`'s writing guidelines to every line.",
+        "new": "Apply the **unslop** skill and the Pi authoring procedure to every line."
+      },
+      {
+        "old": "A `-mode` skill is subjective output. A `create-skill`-style test/iterate benchmark loop isn't useful here. Vibe-check with the user: does it read like them? Did it miss anything? Then ship.",
+        "new": "A `-mode` skill is subjective output. A structural test/iterate benchmark loop isn't useful here. Vibe-check with the user: does it read like them? Did it miss anything? Then ship."
+      },
+      {
+        "old": "- User wants a task-specific skill (not working conventions): `create-skill` alone, no mining required.",
+        "new": "- User wants a task-specific skill (not working conventions): the Pi authoring procedure in `poteto-mode/playbooks/authoring-a-skill.md` under the generated skills directory alone, no mining required."
+      },
+      {
+        "old": "Locate the active workspace's transcripts before fanning out. The system prompt names the workspace's `agent-transcripts/` directory. Use only that path. Don't glob across `~/.cursor/projects/*/`. That crosses workspace boundaries and reads private chats from unrelated projects.",
+        "new": "Use the Pi adapter's session acquisition procedure before reading history. Scope reads to the current Pi session or exact authorized retained session paths supplied by the operator or a retained native run record. Cross-chat mining without an authorized corpus is blocked. Never search a sessions tree or use Cursor transcripts as a fallback."
+      },
+      {
+        "old": "Survey recent agent conversations within that scope for recurring patterns. Run multiple parallel subagents across slices of history (e.g. last 2-4 weeks, split into 3 slices so each has enough material). Pick each subagent's reasoning level and fast or standard speed for the job, per the Subagents section of the **poteto-mode** skill. Each slice mining subagent reads transcripts from the workspace-scoped path the parent provides, looks for the signals below, and returns a short structured list of patterns it saw with evidence pointers. Default signals worth hunting:",
+        "new": "Survey only the authorized session paths within that scope for recurring patterns. Run multiple parallel subagents across slices of history (e.g. last 2-4 weeks, split into 3 slices so each has enough material). Pick each subagent's reasoning level and fast or standard speed for the job, per the Subagents section of the **poteto-mode** skill. Each slice mining subagent reads transcripts from the exact authorized paths the parent provides, looks for the signals below, and returns a short structured list of patterns it saw with evidence pointers. Default signals worth hunting:"
+      }
+    ]
+  },
+  "skills/create-verification-skill/SKILL.md": {
+    "sourceHash": "d353973547bf8ad8977eca645f4cd4feaed0d32f4b43d1448f906b0a76c4d694",
+    "edits": [
+      {
+        "old": "Every serious project needs a scripted way to drive the real app and prove behavior: launch it, exercise a feature the way a user would, and capture evidence. This skill generates that as a project-local skill (`.cursor/skills/verify-<app>/`) tailored to the repo. You write the generator's output for the next agent, not for a human: it will be read cold, mid-task, by an agent that has never seen the app.",
+        "new": "Every serious project needs a scripted way to drive the real app and prove behavior: launch it, exercise a feature the way a user would, and capture evidence. This skill generates that as a project-local skill (`.agents/skills/verify-<app>/`) tailored to the repo. You write the generator's output for the next agent, not for a human: it will be read cold, mid-task, by an agent that has never seen the app."
+      },
+      {
+        "old": "Write `.cursor/skills/verify-<app>/SKILL.md` with YAML frontmatter (`name: verify-<app>` and a `description` that names the app, the surface, and when to reach for it \u2014 without frontmatter the skill never registers) and these sections, each grounded in what the interview actually found (no placeholders left):",
+        "new": "Write `.agents/skills/verify-<app>/SKILL.md` with YAML frontmatter (`name: verify-<app>` and a `description` that names the app, the surface, and when to reach for it \u2014 without frontmatter the skill never registers) and these sections, each grounded in what the interview actually found (no placeholders left):"
+      },
+      {
+        "old": "Create `.cursor/skills/verify-<app>/features/README.md` plus one file per user-facing feature you can identify (aim for the top 3-5 to start, from routes, commands, menus, or docs). Follow the shape in [`references/feature-map-example/`](references/feature-map-example/), with a README index and one file per feature. Each file answers, from the user's point of view: what the feature is, how to reach it, how to drive it with the harness, and what observable end state proves it works. The four H2s are `Sub-features`, `How to get to it (user POV)`, `Driving it with <harness>`, and `Gotchas`. If the seed data lacks a precondition that a journey needs, the journey reports a failure and the reason goes in that feature's `Gotchas`. Never weaken the journey to make it pass. The map is the repo's maintained verification source; a proof that drives one convenient entry point is incomplete when the map lists others.",
+        "new": "Create `.agents/skills/verify-<app>/features/README.md` plus one file per user-facing feature you can identify (aim for the top 3-5 to start, from routes, commands, menus, or docs). Follow the shape in [`references/feature-map-example/`](references/feature-map-example/), with a README index and one file per feature. Each file answers, from the user's point of view: what the feature is, how to reach it, how to drive it with the harness, and what observable end state proves it works. The four H2s are `Sub-features`, `How to get to it (user POV)`, `Driving it with <harness>`, and `Gotchas`. If the seed data lacks a precondition that a journey needs, the journey reports a failure and the reason goes in that feature's `Gotchas`. Never weaken the journey to make it pass. The map is the repo's maintained verification source; a proof that drives one convenient entry point is incomplete when the map lists others."
+      }
+    ]
+  },
+  "skills/reflect/references/synthesizer.md": {
+    "sourceHash": "6af816963de74d1a1aef4070273c1ff533d2072732e488e159ddc0b299fec3cd",
+    "edits": [
+      {
+        "old": "- Existing-skill-first: propose `new skill via create-skill:` only when no existing skill is a real home, the pattern recurs, and the topic deserves its own skill.",
+        "new": "- Existing-skill-first: propose `new Pi skill:` only when no existing skill is a real home, the pattern recurs, and the topic deserves its own skill."
+      },
+      {
+        "old": "| <new pattern, no existing skill is a real home> | <draft a new skill via create-skill> | <new skill via create-skill: <kebab-name>> |",
+        "new": "| <new pattern, no existing skill is a real home> | <draft a new Pi skill> | <new Pi skill: <kebab-name>> |"
+      }
+    ]
+  },
+  "skills/reflect/references/judgment-reviewer.md": {
+    "sourceHash": "38f917619fbf346062d643e0ad6b12fc952d58678dfcbbf42ffcf6d8b9c08307",
+    "edits": [
+      {
+        "old": "Route findings only to skills, tools, or MCPs this transcript used. A skill counts as used when the transcript shows a `Read` of its `SKILL.md` (under `.cursor/skills/`, `~/.cursor/skills/`, or `~/.cursor/plugins/`), a `Task` prompt naming its path, or a tool call (Shell, Grep, MCP, etc.) matching its documented commands. Speculative routings to skills the parent never opened do not count.",
+        "new": "Route findings only to skills, tools, or MCPs this transcript used. A skill counts as used when the transcript shows a `Read` of its `SKILL.md` (at a Pi-discovered project, user, or package path), a `Task` prompt naming its path, or a tool call (Shell, Grep, MCP, etc.) matching its documented commands. Speculative routings to skills the parent never opened do not count."
+      }
+    ]
+  },
+  "skills/reflect/references/tooling-reviewer.md": {
+    "sourceHash": "f81b8697e7366fbbc18feba52c6e3253a101f751091364ebc4396a1d9b5753b4",
+    "edits": [
+      {
+        "old": "Route findings only to skills, tools, or MCPs this transcript used. A skill counts as used when the transcript shows a `Read` of its `SKILL.md` (under `.cursor/skills/`, `~/.cursor/skills/`, or `~/.cursor/plugins/`), a `Task` prompt naming its path, or a tool call (Shell, Grep, MCP, etc.) matching its documented commands. Speculative routings to skills the parent never opened do not count.",
+        "new": "Route findings only to skills, tools, or MCPs this transcript used. A skill counts as used when the transcript shows a `Read` of its `SKILL.md` (at a Pi-discovered project, user, or package path), a `Task` prompt naming its path, or a tool call (Shell, Grep, MCP, etc.) matching its documented commands. Speculative routings to skills the parent never opened do not count."
+      }
+    ]
+  },
+  "skills/reflect/references/divergent-reviewer.md": {
+    "sourceHash": "f6030d88e20e906ef5e2d9ba44cb013ce610c49c2fe2ef74c377d32e0dc9e939",
+    "edits": [
+      {
+        "old": "Route findings only to skills, tools, or MCPs this transcript used. A skill counts as used when the transcript shows a `Read` of its `SKILL.md` (under `.cursor/skills/`, `~/.cursor/skills/`, or `~/.cursor/plugins/`), a `Task` prompt naming its path, or a tool call (Shell, Grep, MCP, etc.) matching its documented commands. Speculative routings to skills the parent never opened do not count.",
+        "new": "Route findings only to skills, tools, or MCPs this transcript used. A skill counts as used when the transcript shows a `Read` of its `SKILL.md` (at a Pi-discovered project, user, or package path), a `Task` prompt naming its path, or a tool call (Shell, Grep, MCP, etc.) matching its documented commands. Speculative routings to skills the parent never opened do not count."
+      }
+    ]
+  },
+  "skills/recall/SKILL.md": {
+    "sourceHash": "b0ceb996259c3404532f61e4b010df4e3d80d7ddbed85b3c302895723eb62a89",
+    "edits": [
+      {
+        "old": "Transcripts live at `~/.cursor/projects/<slug>/agent-transcripts/<uuid>/<uuid>.jsonl`, where `<slug>` is the workspace path with the leading slash dropped and each \"/\" turned into \"-\" (so `/Users/you/proj` becomes `Users-you-proj`). Every line is one chat message.",
+        "new": "Use the Pi adapter's session acquisition procedure before reading history. Scope reads to the current Pi session or exact authorized retained session paths supplied by the operator or a retained native run record. Cross-chat mining without an authorized corpus is blocked. Never search a sessions tree or use Cursor transcripts as a fallback. Pi JSONL starts with a session header and contains typed entries, not just chat messages."
+      },
+      {
+        "old": "3. Fan out across your chat history. Spawn parallel subagents on a fast, cheap model, each taking a slice of the corpus. Tell every subagent to order candidates by real modification time (`ls -t`) and never by UUID name, grep the topic first and then read only the matching chats and only their relevant regions, and skip the current chat plus obvious noise (subagent, eval, and test chats). Each returns the same schema, one block per chat: topic, the user's goal, decisions, open threads, struggles and corrections, and artifacts (PRs, tickets, branches), each citing the chat UUID. For one or two chats, skip the fan-out and search directly. The raw transcripts stay in the subagents. The main thread gets only their findings. Pick each subagent's reasoning level and fast or standard speed for the job, per the Subagents section of the **poteto-mode** skill.",
+        "new": "3. Search only the authorized corpus. For one or two sessions, read directly. Otherwise partition the exact authorized paths among native subagents. Filter by the agreed time window and topic, then read relevant entries. Each finding cites the exact path and entry ID, with the topic, goal, decisions, open threads, corrections, and artifacts. Do not skip the current session when it is the only authorized evidence. Label a current-session-only brief as incomplete for cross-chat recall. Follow native role data for any delegated review."
+      }
+    ]
+  },
+  "skills/show-me-your-work/SKILL.md": {
+    "sourceHash": "920a8217cbb62f92a2222fb81fc9eab17ecd554a0277e444a95a927195139bd1",
+    "edits": [
+      {
+        "old": "At the end of the run, before handing back, check the log told the truth. Read this run's transcript under the active workspace's `agent-transcripts/` directory (the system prompt names the path). Don't glob across `~/.cursor/projects/*/`. That reads unrelated private chats. Walk this run's rows against what actually happened. Each stretch of them begins at one of this run's `start` rows, or at the first row if this run created the log, and ends at the next `start` row of another run:",
+        "new": "At the end of the run, before handing back, check the log told the truth. Use the Pi adapter's session acquisition procedure before reading history. Scope reads to the current Pi session or exact authorized retained session paths supplied by the operator or a retained native run record. Cross-chat mining without an authorized corpus is blocked. Never search a sessions tree or use Cursor transcripts as a fallback. Missing transcript evidence blocks the transcript audit. Walk this run's rows against what actually happened. Each stretch of them begins at one of this run's `start` rows, or at the first row if this run created the log, and ends at the next `start` row of another run:"
+      }
+    ]
+  },
+  "skills/poteto-mode/playbooks/session-pickup.md": {
+    "sourceHash": "d194f2a7ef392c1598ef3f0e3b561370ca25c2c7a78308007af4aa46ada8ee12",
+    "edits": [
+      {
+        "old": "1. Locate the prior trail. A local transcript under the active workspace's `agent-transcripts/` directory (the system prompt names the path. Do not glob across `~/.cursor/projects/*/`, that crosses workspace boundaries and reads private chats from unrelated projects), a cloud-agent URL, or a pushed branch. Read the metadata overview and last messages first, then scan back for the decision points. Parse a long transcript in a subagent and keep the reduced timeline in the main thread (the **principle-guard-the-context-window** skill). Pick each subagent's reasoning level and fast or standard speed for the job, per the Subagents section.",
+        "new": "1. Locate the prior trail. Use the Pi adapter's session acquisition procedure before reading history. Scope reads to the current Pi session or exact authorized retained session paths supplied by the operator or a retained native run record. Cross-chat mining without an authorized corpus is blocked. Never search a sessions tree or use Cursor transcripts as a fallback. A supplied branch or retained native run report can provide separate evidence, but is not a transcript. Read the metadata overview and last messages first, then scan back for the decision points. Parse a long transcript in a subagent and keep the reduced timeline in the main thread (the **principle-guard-the-context-window** skill). Pick each subagent's reasoning level and fast or standard speed for the job, per the Subagents section."
+      }
+    ]
+  },
+  "skills/poteto-mode/playbooks/eval.md": {
+    "sourceHash": "a93d449a908236afa6645179651844094b1547dbab4e484cffcdda630e4b90bf",
+    "edits": [
+      {
+        "old": "6. **Verify the chain from transcripts, not self-report.** Read each candidate's local transcript under the active workspace's `agent-transcripts/` directory (the system prompt names this path). Do not glob across `~/.cursor/projects/*/`. That crosses workspace boundaries and reads private chats from unrelated projects. Look at which files each candidate actually opened. Grade chain-following from the files it really read plus the shape of the code, never from the candidate's own claims.",
+        "new": "6. **Verify the chain from transcripts, not self-report.** Use the Pi adapter's session acquisition procedure before reading history. Scope reads to the current Pi session or exact authorized retained session paths supplied by the operator or a retained native run record. Cross-chat mining without an authorized corpus is blocked. Never search a sessions tree or use Cursor transcripts as a fallback. Read each candidate only at its exact retained path. Missing candidate transcripts block chain verification. Look at which files each candidate actually opened. Grade chain-following from the files it really read plus the shape of the code, never from the candidate's own claims."
+      }
+    ]
+  }
+}

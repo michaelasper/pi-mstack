@@ -1,0 +1,31 @@
+{
+  "extensions": [
+    "",
+    ".cfg",
+    ".dot",
+    ".exit",
+    ".java",
+    ".jpg",
+    ".json",
+    ".lock",
+    ".md",
+    ".mjs",
+    ".mmd",
+    ".out",
+    ".png",
+    ".sh",
+    ".tla",
+    ".ts",
+    ".tsv",
+    ".yaml"
+  ],
+  "basenames": [],
+  "replacements": {
+    "agents/poteto-agent.md": "poteto-agent",
+    "agents/comment-sicko.md": "comment-sicko",
+    "skills/setup-pstack/SKILL.md": "setup",
+    "skills/poteto-mode/scripts/worktree-audit.sh": "workspace-history",
+    "skills/statechart/scripts/test/render.test.ts": "ignore-install-scripts",
+    "skills/poteto-mode/scripts/bootstrap.ts": "ignore-install-scripts"
+  }
+}

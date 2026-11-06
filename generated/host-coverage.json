@@ -1,0 +1,653 @@
+[
+  {
+    "path": "agents/comment-sicko.md",
+    "terms": [
+      "comment-sicko"
+    ]
+  },
+  {
+    "path": "agents/poteto-agent.md",
+    "terms": [
+      "poteto-agent",
+      "MCP"
+    ]
+  },
+  {
+    "path": "skills/architect/references/design-red-flags.md",
+    "terms": []
+  },
+  {
+    "path": "skills/architect/references/rationale-template.md",
+    "terms": []
+  },
+  {
+    "path": "skills/architect/references/runner-prompt.md",
+    "terms": [
+      "Run another pstack skill"
+    ]
+  },
+  {
+    "path": "skills/architect/SKILL.md",
+    "terms": [
+      "todolist",
+      "Run another pstack skill"
+    ]
+  },
+  {
+    "path": "skills/arena/SKILL.md",
+    "terms": [
+      "todolist",
+      "run_in_background"
+    ]
+  },
+  {
+    "path": "skills/automate-me/SKILL.md",
+    "terms": [
+      "AskQuestion",
+      "Run another pstack skill",
+      "MCP"
+    ]
+  },
+  {
+    "path": "skills/benchmark-checklist/SKILL.md",
+    "terms": []
+  },
+  {
+    "path": "skills/blast-radius/SKILL.md",
+    "terms": []
+  },
+  {
+    "path": "skills/bro/SKILL.md",
+    "terms": []
+  },
+  {
+    "path": "skills/correct/SKILL.md",
+    "terms": []
+  },
+  {
+    "path": "skills/create-formal-verification-skill/SKILL.md",
+    "terms": [
+      "Run another pstack skill"
+    ]
+  },
+  {
+    "path": "skills/create-verification-skill/references/feature-map-example/create-note.md",
+    "terms": []
+  },
+  {
+    "path": "skills/create-verification-skill/references/feature-map-example/README.md",
+    "terms": []
+  },
+  {
+    "path": "skills/create-verification-skill/references/feature-map-example/search.md",
+    "terms": []
+  },
+  {
+    "path": "skills/create-verification-skill/SKILL.md",
+    "terms": [
+      "Run another pstack skill"
+    ]
+  },
+  {
+    "path": "skills/figure-it-out/SKILL.md",
+    "terms": [
+      "todolist",
+      "Run another pstack skill"
+    ]
+  },
+  {
+    "path": "skills/how/references/explainer-prompt.md",
+    "terms": []
+  },
+  {
+    "path": "skills/how/references/explorer-prompt.md",
+    "terms": []
+  },
+  {
+    "path": "skills/how/SKILL.md",
+    "terms": []
+  },
+  {
+    "path": "skills/in-your-own-words/SKILL.md",
+    "terms": []
+  },
+  {
+    "path": "skills/interrogate/SKILL.md",
+    "terms": [
+      "generalPurpose",
+      "Run another pstack skill"
+    ]
+  },
+  {
+    "path": "skills/ketchup-video/SKILL.md",
+    "terms": [
+      "Run another pstack skill"
+    ]
+  },
+  {
+    "path": "skills/ketchup/SKILL.md",
+    "terms": [
+      "Run another pstack skill"
+    ]
+  },
+  {
+    "path": "skills/maintain-formal-verification-skill/SKILL.md",
+    "terms": [
+      "Run another pstack skill"
+    ]
+  },
+  {
+    "path": "skills/maintain-verification-skill/SKILL.md",
+    "terms": [
+      "Run another pstack skill"
+    ]
+  },
+  {
+    "path": "skills/make-bot-ui/SKILL.md",
+    "terms": [
+      "gates"
+    ]
+  },
+  {
+    "path": "skills/no-comments/SKILL.md",
+    "terms": [
+      "Task",
+      "comment-sicko",
+      "Run another pstack skill",
+      "subagent_type"
+    ]
+  },
+  {
+    "path": "skills/poteto-help/references/prompting.md",
+    "terms": [
+      "resume",
+      "Run another pstack skill",
+      "loops"
+    ]
+  },
+  {
+    "path": "skills/poteto-help/references/recipes.md",
+    "terms": [
+      "Run another pstack skill",
+      "loops"
+    ]
+  },
+  {
+    "path": "skills/poteto-help/SKILL.md",
+    "terms": [
+      "todolist",
+      "resume",
+      "Cursor-only features",
+      "Run another pstack skill",
+      "loops",
+      "gates"
+    ]
+  },
+  {
+    "path": "skills/poteto-mode/playbooks/authoring-a-skill.md",
+    "terms": [
+      "Run another pstack skill"
+    ]
+  },
+  {
+    "path": "skills/poteto-mode/playbooks/autonomous-run.md",
+    "terms": [
+      "AskQuestion",
+      "Run another pstack skill",
+      "loops"
+    ]
+  },
+  {
+    "path": "skills/poteto-mode/playbooks/autopilot-full.md",
+    "terms": [
+      "Cursor-only features",
+      "Run another pstack skill",
+      "loops",
+      "gates"
+    ]
+  },
+  {
+    "path": "skills/poteto-mode/playbooks/autopilot-stack.md",
+    "terms": []
+  },
+  {
+    "path": "skills/poteto-mode/playbooks/babysit.md",
+    "terms": [
+      "Cursor-only features",
+      "Run another pstack skill",
+      "loops"
+    ]
+  },
+  {
+    "path": "skills/poteto-mode/playbooks/bug-fix.md",
+    "terms": [
+      "Run another pstack skill",
+      "loops"
+    ]
+  },
+  {
+    "path": "skills/poteto-mode/playbooks/eval.md",
+    "terms": [
+      "Run another pstack skill"
+    ]
+  },
+  {
+    "path": "skills/poteto-mode/playbooks/feature.md",
+    "terms": [
+      "Run another pstack skill"
+    ]
+  },
+  {
+    "path": "skills/poteto-mode/playbooks/hillclimb.md",
+    "terms": [
+      "Run another pstack skill"
+    ]
+  },
+  {
+    "path": "skills/poteto-mode/playbooks/investigation.md",
+    "terms": [
+      "Run another pstack skill"
+    ]
+  },
+  {
+    "path": "skills/poteto-mode/playbooks/multi-phase-plan.md",
+    "terms": [
+      "poteto-agent",
+      "Cursor-only features",
+      "Run another pstack skill",
+      "loops",
+      "gates",
+      "subagent_type"
+    ]
+  },
+  {
+    "path": "skills/poteto-mode/playbooks/opening-a-pr.md",
+    "terms": [
+      "Task",
+      "Cursor-only features",
+      "Run another pstack skill",
+      "gates"
+    ]
+  },
+  {
+    "path": "skills/poteto-mode/playbooks/orchestrate.md",
+    "terms": [
+      "Task",
+      "environment",
+      "gates"
+    ]
+  },
+  {
+    "path": "skills/poteto-mode/playbooks/pause-safely.md",
+    "terms": [
+      "resume"
+    ]
+  },
+  {
+    "path": "skills/poteto-mode/playbooks/perf-issue.md",
+    "terms": [
+      "Run another pstack skill"
+    ]
+  },
+  {
+    "path": "skills/poteto-mode/playbooks/prototype.md",
+    "terms": []
+  },
+  {
+    "path": "skills/poteto-mode/playbooks/refactoring.md",
+    "terms": [
+      "Run another pstack skill"
+    ]
+  },
+  {
+    "path": "skills/poteto-mode/playbooks/runtime-forensics.md",
+    "terms": []
+  },
+  {
+    "path": "skills/poteto-mode/playbooks/session-pickup.md",
+    "terms": [
+      "resume",
+      "Run another pstack skill"
+    ]
+  },
+  {
+    "path": "skills/poteto-mode/playbooks/shipping.md",
+    "terms": [
+      "Cursor-only features",
+      "Run another pstack skill",
+      "loops",
+      "gates"
+    ]
+  },
+  {
+    "path": "skills/poteto-mode/playbooks/trace-forensics.md",
+    "terms": [
+      "Run another pstack skill"
+    ]
+  },
+  {
+    "path": "skills/poteto-mode/playbooks/visual-parity.md",
+    "terms": [
+      "Run another pstack skill",
+      "loops"
+    ]
+  },
+  {
+    "path": "skills/poteto-mode/playbooks/worktree-cleanup.md",
+    "terms": [
+      ".cursor/worktrees/"
+    ]
+  },
+  {
+    "path": "skills/poteto-mode/references/bugbot-triage.md",
+    "terms": [
+      "Cursor-only features"
+    ]
+  },
+  {
+    "path": "skills/poteto-mode/SKILL.md",
+    "terms": [
+      "AskQuestion",
+      "todolist",
+      "poteto-agent",
+      "resume",
+      "Cursor-only features",
+      "Run another pstack skill",
+      "loops",
+      "MCP",
+      "gates",
+      "subagent_type"
+    ]
+  },
+  {
+    "path": "skills/principle-attack-the-premise/SKILL.md",
+    "terms": []
+  },
+  {
+    "path": "skills/principle-boundary-discipline/SKILL.md",
+    "terms": []
+  },
+  {
+    "path": "skills/principle-build-the-lever/SKILL.md",
+    "terms": []
+  },
+  {
+    "path": "skills/principle-encode-lessons-in-structure/SKILL.md",
+    "terms": []
+  },
+  {
+    "path": "skills/principle-exhaust-the-design-space/SKILL.md",
+    "terms": []
+  },
+  {
+    "path": "skills/principle-experience-first/SKILL.md",
+    "terms": []
+  },
+  {
+    "path": "skills/principle-explain-the-number/SKILL.md",
+    "terms": []
+  },
+  {
+    "path": "skills/principle-fix-root-causes/SKILL.md",
+    "terms": []
+  },
+  {
+    "path": "skills/principle-foundational-thinking/SKILL.md",
+    "terms": []
+  },
+  {
+    "path": "skills/principle-guard-the-context-window/SKILL.md",
+    "terms": []
+  },
+  {
+    "path": "skills/principle-laziness-protocol/SKILL.md",
+    "terms": []
+  },
+  {
+    "path": "skills/principle-make-operations-idempotent/SKILL.md",
+    "terms": []
+  },
+  {
+    "path": "skills/principle-migrate-callers-then-delete-legacy-apis/SKILL.md",
+    "terms": []
+  },
+  {
+    "path": "skills/principle-minimize-reader-load/SKILL.md",
+    "terms": []
+  },
+  {
+    "path": "skills/principle-model-the-domain/SKILL.md",
+    "terms": []
+  },
+  {
+    "path": "skills/principle-never-block-on-the-human/SKILL.md",
+    "terms": []
+  },
+  {
+    "path": "skills/principle-outcome-oriented-execution/SKILL.md",
+    "terms": []
+  },
+  {
+    "path": "skills/principle-prove-it-works/SKILL.md",
+    "terms": [
+      "Run another pstack skill"
+    ]
+  },
+  {
+    "path": "skills/principle-redesign-from-first-principles/SKILL.md",
+    "terms": []
+  },
+  {
+    "path": "skills/principle-separate-before-serializing-shared-state/SKILL.md",
+    "terms": []
+  },
+  {
+    "path": "skills/principle-sequence-verifiable-units/SKILL.md",
+    "terms": []
+  },
+  {
+    "path": "skills/principle-subtract-before-you-add/SKILL.md",
+    "terms": []
+  },
+  {
+    "path": "skills/principle-test-behavior-not-implementation/SKILL.md",
+    "terms": []
+  },
+  {
+    "path": "skills/principle-type-system-discipline/SKILL.md",
+    "terms": [
+      "environment"
+    ]
+  },
+  {
+    "path": "skills/recall/SKILL.md",
+    "terms": [
+      "resume",
+      "Run another pstack skill",
+      "MCP"
+    ]
+  },
+  {
+    "path": "skills/reflect/references/divergent-reviewer.md",
+    "terms": [
+      "Task",
+      "environment",
+      "MCP"
+    ]
+  },
+  {
+    "path": "skills/reflect/references/judgment-reviewer.md",
+    "terms": [
+      "Task",
+      "environment",
+      "MCP"
+    ]
+  },
+  {
+    "path": "skills/reflect/references/synthesizer.md",
+    "terms": [
+      "environment",
+      "gpt-",
+      "Cursor-only features",
+      "MCP"
+    ]
+  },
+  {
+    "path": "skills/reflect/references/tooling-reviewer.md",
+    "terms": [
+      "Task",
+      "environment",
+      "MCP"
+    ]
+  },
+  {
+    "path": "skills/reflect/SKILL.md",
+    "terms": [
+      "Task",
+      "generalPurpose",
+      "readonly",
+      "environment",
+      "MCP",
+      "subagent_type"
+    ]
+  },
+  {
+    "path": "skills/setup-pstack/SKILL.md",
+    "terms": [
+      "Run another pstack skill"
+    ]
+  },
+  {
+    "path": "skills/sharpen/SKILL.md",
+    "terms": []
+  },
+  {
+    "path": "skills/show-me-your-work/SKILL.md",
+    "terms": [
+      "Run another pstack skill"
+    ]
+  },
+  {
+    "path": "skills/statechart/references/render.md",
+    "terms": []
+  },
+  {
+    "path": "skills/statechart/SKILL.md",
+    "terms": []
+  },
+  {
+    "path": "skills/swarm/SKILL.md",
+    "terms": [
+      "todolist",
+      "cloud_base_branch"
+    ]
+  },
+  {
+    "path": "skills/tdd/SKILL.md",
+    "terms": []
+  },
+  {
+    "path": "skills/teach/SKILL.md",
+    "terms": [
+      "Run another pstack skill"
+    ]
+  },
+  {
+    "path": "skills/technical-writing/SKILL.md",
+    "terms": [
+      "Run another pstack skill"
+    ]
+  },
+  {
+    "path": "skills/typescript-best-practices/references/patterns.md",
+    "terms": [
+      "readonly",
+      "environment"
+    ]
+  },
+  {
+    "path": "skills/typescript-best-practices/SKILL.md",
+    "terms": [
+      "readonly"
+    ]
+  },
+  {
+    "path": "skills/unslop/SKILL.md",
+    "terms": []
+  },
+  {
+    "path": "skills/why/references/epistemics.md",
+    "terms": []
+  },
+  {
+    "path": "skills/why/references/investigator-prompt.md",
+    "terms": []
+  },
+  {
+    "path": "skills/why/references/source-playbook.md",
+    "terms": [
+      "MCP"
+    ]
+  },
+  {
+    "path": "skills/why/references/sources/code-archaeology.md",
+    "terms": []
+  },
+  {
+    "path": "skills/why/references/sources/databricks.md",
+    "terms": [
+      "MCP"
+    ]
+  },
+  {
+    "path": "skills/why/references/sources/datadog.md",
+    "terms": [
+      "MCP"
+    ]
+  },
+  {
+    "path": "skills/why/references/sources/incident-postmortem.md",
+    "terms": []
+  },
+  {
+    "path": "skills/why/references/sources/linear.md",
+    "terms": [
+      "MCP"
+    ]
+  },
+  {
+    "path": "skills/why/references/sources/notion.md",
+    "terms": [
+      "MCP"
+    ]
+  },
+  {
+    "path": "skills/why/references/sources/sentry.md",
+    "terms": [
+      "environment",
+      "MCP"
+    ]
+  },
+  {
+    "path": "skills/why/references/sources/slack.md",
+    "terms": [
+      "MCP"
+    ]
+  },
+  {
+    "path": "skills/why/references/synthesizer-prompt.md",
+    "terms": [
+      "environment",
+      "MCP"
+    ]
+  },
+  {
+    "path": "skills/why/SKILL.md",
+    "terms": [
+      "generalPurpose",
+      "readonly",
+      "environment",
+      "MCP"
+    ]
+  }
+]

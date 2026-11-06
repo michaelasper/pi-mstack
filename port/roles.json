@@ -1,0 +1,70 @@
+[
+  {
+    "name": "feature, refactoring",
+    "panel": false
+  },
+  {
+    "name": "bug-fix",
+    "panel": false
+  },
+  {
+    "name": "perf-issue",
+    "panel": false
+  },
+  {
+    "name": "hillclimb",
+    "panel": false
+  },
+  {
+    "name": "judgment and prose",
+    "panel": false
+  },
+  {
+    "name": "hardest tasks",
+    "panel": false
+  },
+  {
+    "name": "how explorer",
+    "panel": false
+  },
+  {
+    "name": "how explainer",
+    "panel": false
+  },
+  {
+    "name": "why investigators",
+    "panel": false
+  },
+  {
+    "name": "why synthesizer",
+    "panel": false
+  },
+  {
+    "name": "reflect tooling",
+    "panel": false
+  },
+  {
+    "name": "reflect judgment, divergent, synthesizer",
+    "panel": false
+  },
+  {
+    "name": "arena runners",
+    "panel": true
+  },
+  {
+    "name": "arena cross-judge pool",
+    "panel": true
+  },
+  {
+    "name": "swarm workers",
+    "panel": false
+  },
+  {
+    "name": "architect runners",
+    "panel": true
+  },
+  {
+    "name": "interrogate reviewers",
+    "panel": true
+  }
+]
