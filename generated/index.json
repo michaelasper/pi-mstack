@@ -952,6 +952,13 @@
     "adapterId": "copy"
   },
   {
+    "path": "skills/statechart/scripts/pi-loader.mjs",
+    "sha256": "a523d2b7e2222129a7d9977cca7a87d9f2b00d30f592bfeb9b95453233249422",
+    "gitMode": "100644",
+    "sourceHash": "a523d2b7e2222129a7d9977cca7a87d9f2b00d30f592bfeb9b95453233249422",
+    "adapterId": "statechart-node-loader"
+  },
+  {
     "path": "skills/statechart/scripts/pipeline.ts",
     "sha256": "8aa8d9295ab6762f7f2ffae91a0aee98b1a1314747c875edba4598fdab8ed543",
     "gitMode": "100644",
@@ -967,10 +974,10 @@
   },
   {
     "path": "skills/statechart/scripts/statechart",
-    "sha256": "aeffb7077850fd4c225e3d18049ca6ed7b988cf48e88cd8463526a7feaa74d13",
+    "sha256": "7d37fa7356b01d689acf8dd4e9f6ba3c5319e4d0b0d632b56de89af16906e4bc",
     "gitMode": "100755",
     "sourceHash": "aeffb7077850fd4c225e3d18049ca6ed7b988cf48e88cd8463526a7feaa74d13",
-    "adapterId": "copy"
+    "adapterId": "exact:skills/statechart/scripts/statechart"
   },
   {
     "path": "skills/statechart/scripts/statechart.ts",
@@ -1009,10 +1016,10 @@
   },
   {
     "path": "skills/statechart/scripts/test/cli.test.ts",
-    "sha256": "8a3b028dafe2065029a66242f7a3832d18058e772a0dfc1b2c170511ffee8e07",
+    "sha256": "70e63bcf2585fc1cb174d8a8c3b033e10d4172a3078009090de46132a616643e",
     "gitMode": "100644",
     "sourceHash": "8a3b028dafe2065029a66242f7a3832d18058e772a0dfc1b2c170511ffee8e07",
-    "adapterId": "copy"
+    "adapterId": "exact:skills/statechart/scripts/test/cli.test.ts"
   },
   {
     "path": "skills/statechart/scripts/test/config-fuzz.test.ts",

@@ -17,7 +17,7 @@ version() {
 }
 node=$(version node)
 if [ "$node" -ge 23006000 ] || { [ "$node" -ge 22018000 ] && [ "$node" -lt 23000000 ]; }; then
-  exec node --disable-warning=ExperimentalWarning "$entry" "$@"
+  exec node --disable-warning=ExperimentalWarning --import "$(CDPATH= cd -- "$(dirname "$self")" && pwd)/pi-loader.mjs" "$entry" "$@"
 fi
 if [ "$(version bun)" -ge 1001005 ]; then
   exec bun "$entry" "$@"

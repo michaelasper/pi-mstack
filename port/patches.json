@@ -1,4 +1,22 @@
 {
+  "skills/statechart/scripts/statechart": {
+    "sourceHash": "aeffb7077850fd4c225e3d18049ca6ed7b988cf48e88cd8463526a7feaa74d13",
+    "edits": [
+      {
+        "old": "exec node --disable-warning=ExperimentalWarning \"$entry\" \"$@\"",
+        "new": "exec node --disable-warning=ExperimentalWarning --import \"$(CDPATH= cd -- \"$(dirname \"$self\")\" && pwd)/pi-loader.mjs\" \"$entry\" \"$@\""
+      }
+    ]
+  },
+  "skills/statechart/scripts/test/cli.test.ts": {
+    "sourceHash": "8a3b028dafe2065029a66242f7a3832d18058e772a0dfc1b2c170511ffee8e07",
+    "edits": [
+      {
+        "old": "const links = fs.mkdtempSync(path.join(os.tmpdir(), \"statechart-links-\"));",
+        "new": "const links = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), \"statechart-links-\")));"
+      }
+    ]
+  },
   "skills/arena/SKILL.md": {
     "sourceHash": "d0adeca6c9b19d43d90ed8f0484f0ddd362f05006d628b8f4cc6c9b55fa4d2b3",
     "edits": [

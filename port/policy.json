@@ -21,6 +21,8 @@
   ],
   "basenames": [],
   "replacements": {
+    "skills/statechart/scripts/statechart": "statechart-node-loader",
+    "skills/statechart/scripts/test/cli.test.ts": "canonical-symlink-fixture",
     "agents/poteto-agent.md": "poteto-agent",
     "agents/comment-sicko.md": "comment-sicko",
     "skills/setup-pstack/SKILL.md": "setup",

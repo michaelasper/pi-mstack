@@ -34,6 +34,32 @@ The suite requires Git, tar, Python 3, a POSIX terminal, and installed developme
 | Native policy | Native tests observe rejected global scope, strict inheritance, per-agent scope, and thinking-ceiling requests. Explicit parent selection defeats a conflicting native agent model override. `tests/runtime-regressions.test.mjs` also observes trusted project policy replacement despite conflicting user settings. Doctor labels merged settings as observations. |
 | Runtime regressions | Real packed RPC tests preserve literal extension messages, enforce ASCII-space activation grammar, and refuse busy mode changes without persistence or queuing. Empty files and colon-bearing model IDs have targeted regressions. Custom slash and URL provider IDs have real SDK prompt tests for explicit and inherited selections. Unit tests block ambiguous combined IDs without substitution. |
 | Adapter prose | `tests/adapter.test.mjs` checks mandatory gate wording and exact replacement outcomes. These are prose regressions, not model-compliance evaluations. |
+| Statechart | `tests/statechart.test.mjs` runs the upstream offline CLI and recorded-output tests, then runs broken and fixed fixtures through a packed `node_modules` installation, directly and through symlinks in paths containing spaces. These default checks replay TLC output; they do not run Java. |
+
+## Statechart execution and live verification
+
+The Node launcher loads `pi-loader.mjs` before the TypeScript entry point. Its type-stripping hook applies only to the bundled statechart directory, allowing execution inside `node_modules` without changing the handling of other packages. The worker inherits the loader. Source remains pinned; the launcher and symlink-fixture adaptations are hash-bound in `port/patches.json`.
+
+The offline regression suite is included in `npm test`. Run it separately with:
+
+```sh
+node --test tests/statechart.test.mjs
+```
+
+`.github/workflows/statechart.yml` tests npm-layout execution on Linux and macOS, including the minimum supported Node 22.19.0. Its separate live job uses Temurin 17.0.15+6 and TLC 1.7.4, verifying the jar's SHA-256 before execution:
+
+```text
+936a262061c914694dfd669a543be24573c45d5aa0ff20a8b96b23d01e050e88
+```
+
+With `TLA2TOOLS` set to that verified jar's absolute path and `JAVA` set to the Java executable, reproduce the live checks with:
+
+```sh
+node --test generated/skills/statechart/scripts/test/corpus.test.ts generated/skills/statechart/scripts/test/tlc-out.test.ts
+MSTACK_LIVE_TLC=1 node --test --test-name-pattern='live TLC' tests/statechart.test.mjs
+```
+
+The corpus tests compare real TLC results with retained reports and charts. The installed-package check requires the broken MediaPlayer model to exit 1 and the fixed model to exit 0. This establishes model-checking and packaging behavior, not equivalence between an arbitrary model and product code. Renderer validation remains separate.
 
 ## Task-forwarding prototype
 
@@ -63,7 +89,7 @@ These are reviewed instruction contracts with prose-only regression checks, not 
 
 ## Unverified areas
 
-No renderer, Java, TLC, forge, paid-model, cloud-service, or external bot integration runs in this suite. Source hashes and lexical checks do not prove semantic equivalence for every workflow. The PTY test proves completed output, not human visual quality. Setup uses an exclusive models.json.lock, an optimistic stale-write check, and atomic rename. A pre-existing lock blocks setup rather than being silently removed.
+No renderer, Java, TLC, forge, paid-model, cloud-service, or external bot integration runs in the default suite. The separate live statechart job described below runs Java and TLC. Source hashes and lexical checks do not prove semantic equivalence for every workflow. The PTY test proves completed output, not human visual quality. Setup uses an exclusive models.json.lock, an optimistic stale-write check, and atomic rename. A pre-existing lock blocks setup rather than being silently removed.
 
 Dependency tools can be present while native agent provenance or package versions remain unobservable to the extension. Doctor says unverified in those cases. The tests observe the pinned versions through the development installation and native package metadata, not by inferring versions from tool names.
 

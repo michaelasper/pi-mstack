@@ -1,6 +1,6 @@
 {
   "schema": 2,
-  "reviewDigest": "1f142e0089a29932768d1fc74e1b32da021bd3f821134f3fcb03f6fb4f56ddbd",
+  "reviewDigest": "f38e6aac09a804d3dd4604ea07f6d6b04122b531cc371d7e7dc3d13677bf26f0",
   "inputs": [
     {
       "path": "tools/importer.mjs",
@@ -8,7 +8,7 @@
     },
     {
       "path": "tools/render.mjs",
-      "sha256": "3bcc7c0b1afc1072dc384e05bed8745c2b70d578dc77daf08eebe2f22c7460f1"
+      "sha256": "c18db55a0e71bb0367f586489c644ba403037966b43aba121d41a343e569b3a5"
     },
     {
       "path": "tools/upstream.mjs",
@@ -24,11 +24,11 @@
     },
     {
       "path": "port/patches.json",
-      "sha256": "74d5c393a4f2b22866bb53d63b5ee7cfe3cc308821c7a14cfedecbc68f4fd383"
+      "sha256": "9b58846faf811fc80409ce87c681f50d63dc845562d4f153b9f1167f17e6a696"
     },
     {
       "path": "port/policy.json",
-      "sha256": "8626e8a05f4affd12319072ef4c4e1cc3fd941be09a544a8fe50e0de2f4d1b9f"
+      "sha256": "ab64a8fd5936bb2d388fbde08a7d3869e653605dc8ad6a2970a3053cfbc4e49a"
     },
     {
       "path": "port/required-terms.json",
@@ -53,6 +53,10 @@
     {
       "path": "port/templates/setup.md",
       "sha256": "b83f28210eb18c21459463a7e5fcd4f90eceae6f8cb75bb3b6f7df0afbd99976"
+    },
+    {
+      "path": "port/templates/statechart-loader.mjs",
+      "sha256": "a523d2b7e2222129a7d9977cca7a87d9f2b00d30f592bfeb9b95453233249422"
     }
   ]
 }

@@ -1690,8 +1690,9 @@
       "sha256": "aeffb7077850fd4c225e3d18049ca6ed7b988cf48e88cd8463526a7feaa74d13",
       "gitMode": "100755",
       "disposition": {
-        "kind": "copy",
-        "outputPath": "skills/statechart/scripts/statechart"
+        "kind": "adapt",
+        "outputPath": "skills/statechart/scripts/statechart",
+        "adapterId": "statechart-node-loader"
       }
     },
     {
@@ -1744,8 +1745,9 @@
       "sha256": "8a3b028dafe2065029a66242f7a3832d18058e772a0dfc1b2c170511ffee8e07",
       "gitMode": "100644",
       "disposition": {
-        "kind": "copy",
-        "outputPath": "skills/statechart/scripts/test/cli.test.ts"
+        "kind": "adapt",
+        "outputPath": "skills/statechart/scripts/test/cli.test.ts",
+        "adapterId": "canonical-symlink-fixture"
       }
     },
     {
