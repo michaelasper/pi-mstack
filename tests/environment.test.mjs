@@ -13,7 +13,7 @@ test('scoped environment merges exact terms in order and fails closed', t => {
   writeFileSync(join(user, 'pstack/environment-grants.json'), JSON.stringify({ version: 'pi-mstack/environment-grants/1', projects: [realpathSync(cwd)] }));
   const load = nativeTrusted => loadEnvironment({ agentDir: user, cwd, nativeTrusted, sessionId: dir, notify() {} });
   const write = (base, data) => writeFileSync(join(base, 'pstack/environment.json'), JSON.stringify(data));
-  assert.deepEqual(load(true), { kind: 'valid', naming: 'task', glossary: [], sources: [] });
+  assert.deepEqual(load(true), { kind: 'valid', naming: 'task', glossary: [], sources: [], mappings: { reviewBots: [] } });
   const term = (term, meaning) => ({ term, meaning, availability: 'conditional' });
   write(user, { version, glossary: [term('Jira', 'user'), term('Docs', 'second')], sources: [{ id: 'u', kind: 'memory', path: join(dir, 'memory'), delivery: 'automatic' }] });
   write(join(cwd, '.pi'), { version, glossary: [term('Jira', 'project'), term('jira', 'distinct')] });
