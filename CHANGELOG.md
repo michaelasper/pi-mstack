@@ -4,6 +4,15 @@ Versions use [Semantic Versioning](https://semver.org/). A heading records prepa
 
 ## [Unreleased]
 
+## [0.2.1]
+
+### Changed
+
+- Make npm the default installation path, with a refreshed README and separate Diátaxis tutorial, how-to, reference, and explanation navigation.
+- Update the tested pi-subagents version to 0.87.0, TypeScript to 7.0.2, and Node.js types to 26.6.6. The minimum runtime remains Node.js 22.19.0.
+- Update pinned checkout, setup-node, setup-java, and upload-artifact GitHub Actions.
+- Require protected pull requests and CI for `main`, protect release tags from modification, and enable Dependabot security updates.
+
 ## [0.2.0]
 
 ### Added

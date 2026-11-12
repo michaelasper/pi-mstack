@@ -24,7 +24,7 @@ Requires **Node.js 22.19 or later** and **Pi 1.5.0**. Install from npm through P
 
 ```sh
 pi install npm:@trevonistrevon/pi-loop@0.7.19
-pi install npm:pi-subagents@0.86.0
+pi install npm:pi-subagents@0.87.0
 pi install npm:pi-mstack
 ```
 
