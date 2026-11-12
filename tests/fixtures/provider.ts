@@ -3,10 +3,15 @@ import { createAssistantMessageEventStream, getCurrentSystemPrompt, type Assista
 import type { ExtensionAPI } from '@earendil-works/pi-coding-agent';
 
 export default function provider(pi: ExtensionAPI) {
+  if (process.env.MSTACK_IMPORT_TESTS === '1') process.env.MSTACK_IMPORT_AUTH = 'scripted-not-a-credential';
   if (process.env.MSTACK_IMPORT_TESTS === '1') pi.registerCommand('mstack-import-test', {
     handler: async (args, ctx) => {
       if (args === 'remove') pi.unregisterProvider('team/custom');
-      else if (args === 'revoke') pi.registerProvider('team/custom', { apiKey: '$MSTACK_MISSING_AUTH' });
+      else if (args === 'revoke') delete process.env.MSTACK_IMPORT_AUTH;
+      else if (args === 'reregister-revoke') {
+        delete process.env.MSTACK_IMPORT_AUTH;
+        pi.registerProvider('team/custom', ctx.modelRegistry.getRegisteredProviderConfig('team/custom')!);
+      }
       else if (args === 'collision') pi.registerCommand('setup-pstack', { handler: async () => {} });
       else throw Error('Unknown import test mutation');
       await ctx.modelRegistry.refresh({ allowNetwork: false });
@@ -14,7 +19,8 @@ export default function provider(pi: ExtensionAPI) {
     },
   });
   for (const provider of ['mstack-test', 'team/custom', 'https://example.test/v1']) pi.registerProvider(provider, {
-    api: 'mstack-scripted', baseUrl: 'http://127.0.0.1:1', apiKey: 'scripted-not-a-credential',
+    api: 'mstack-scripted', baseUrl: 'http://127.0.0.1:1',
+    apiKey: provider === 'team/custom' && process.env.MSTACK_IMPORT_TESTS === '1' ? '$MSTACK_IMPORT_AUTH' : 'scripted-not-a-credential',
     models: ['script/model', 'other', 'no-reasoning'].map(id => ({ id, name: id, reasoning: id !== 'no-reasoning', input: ['text', 'image'], cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, contextWindow: 200000, maxTokens: 4096 })),
     streamSimple(model, context, options) {
       const stream = createAssistantMessageEventStream();

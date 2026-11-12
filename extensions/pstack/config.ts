@@ -72,7 +72,25 @@ export function roleData(state: ConfigState, ctx: Pick<ExtensionContext, 'model'
   if (state.kind === 'invalid') return `Configuration blocked. ${state.diagnostic}. Do not substitute defaults.`;
   return inspectRoles(state.config, ctx).table;
 }
-export function inspectRoles(config: Config, ctx: Pick<ExtensionContext, 'model' | 'thinkingLevel' | 'modelRegistry' | 'scopedModels'>) {
+export async function freshImportAvailability(config: Config, ctx: Pick<ExtensionContext, 'model' | 'modelRegistry'>) {
+  const selected = new Set(roles.flatMap(role => {
+    const configured = config.roles[role.name] ?? 'inherit-parent';
+    return (Array.isArray(configured) ? configured : [configured]).map(value => {
+      const parsed = splitSelector(value);
+      return parsed.kind === 'exact' ? parsed.combinedId : ctx.model ? `${ctx.model.provider}/${ctx.model.id}` : undefined;
+    });
+  }));
+  const providers = new Set(ctx.modelRegistry.getAvailable().filter(model => selected.has(`${model.provider}/${model.id}`)).map(model => model.provider));
+  const signal = AbortSignal.timeout(5000);
+  try {
+    const available = await Promise.all([...providers].map(provider => ctx.modelRegistry.getAvailableOfType('chat', provider, { signal })));
+    signal.throwIfAborted();
+    return new Set(available.flatMap(models => models.map(model => `${model.provider}/${model.id}`)));
+  } catch {
+    throw Error('Fresh authentication check failed. Configuration unchanged. Retry the import.');
+  }
+}
+export function inspectRoles(config: Config, ctx: Pick<ExtensionContext, 'model' | 'thinkingLevel' | 'modelRegistry' | 'scopedModels'>, availability?: ReadonlySet<string>) {
   let valid = true;
   const blocked = (text: string) => { valid = false; return text; };
   const parent = ctx.model ? `${ctx.model.provider}/${ctx.model.id}:${ctx.thinkingLevel}` : undefined;
@@ -89,7 +107,7 @@ export function inspectRoles(config: Config, ctx: Pick<ExtensionContext, 'model'
       const matches = available.filter(m => `${m.provider}/${m.id}` === exact.combinedId);
       if (matches.length > 1) return blocked(`${effective} [BLOCKED, ambiguous combined model ID]`);
       const model = matches[0];
-      if (!model) return blocked(`${effective} [BLOCKED, unavailable or unauthenticated]`);
+      if (!model || (availability && !availability.has(exact.combinedId))) return blocked(`${effective} [BLOCKED, unavailable or unauthenticated]`);
       if (exact.thinking && !getSupportedThinkingLevels(model).some(level => level === exact.thinking)) return blocked(`${effective} [BLOCKED, unsupported thinking]`);
       const outside = ctx.scopedModels.length && !ctx.scopedModels.some(s => s.model.provider === model.provider && s.model.id === model.id);
       return `${effective} [registry-valid; ${outside ? 'outside session picker scope; ' : ''}native preflight required]`;

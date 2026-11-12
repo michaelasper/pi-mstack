@@ -103,7 +103,7 @@ for (const defaultValue of [true, false, undefined]) test(`RPC import previews e
   assert.equal(readFileSync(source, 'utf8'), text);
 });
 
-for (const mutation of ['cancel', 'destination', 'source', 'model', 'thinking', 'remove', 'revoke', 'lock', 'collision']) test(`RPC import pending confirmation handles ${mutation}`, { timeout: 30000 }, async t => {
+for (const mutation of ['cancel', 'destination', 'source', 'model', 'thinking', 'remove', 'revoke', 'reregister-revoke', 'lock', 'collision']) test(`RPC import pending confirmation handles ${mutation}`, { timeout: 30000 }, async t => {
   const dir = join(artifact.dir, `race-${mutation}`); mkdirSync(dir);
   const iso = isolated(dir, artifact.packageRoot); iso.env.MSTACK_IMPORT_TESTS = '1';
   const path = join(iso.agentDir, 'pstack/models.json'); mkdirSync(join(iso.agentDir, 'pstack'));
@@ -120,6 +120,7 @@ for (const mutation of ['cancel', 'destination', 'source', 'model', 'thinking', 
   if (mutation === 'source') writeFileSync(source, 'bug-fix: auto');
   if (mutation === 'model') { await client.send('set_model', { provider: 'mstack-test', modelId: 'other' }); assert.equal((await client.send('get_state')).model.id, 'other'); }
   if (mutation === 'thinking') { await client.send('set_thinking_level', { level: 'high' }); assert.equal((await client.send('get_state')).thinkingLevel, 'high'); }
+  if (mutation === 'reregister-revoke') await client.send('prompt', { message: '/mstack-import-test reregister-revoke' });
   if (mutation === 'remove' || mutation === 'revoke' || mutation === 'collision') {
     await client.send('prompt', { message: `/mstack-import-test ${mutation}` });
     const observation = client.records.filter(e => e.method === 'notify' && e.message.startsWith('{"available":')).at(-1);
@@ -131,7 +132,7 @@ for (const mutation of ['cancel', 'destination', 'source', 'model', 'thinking', 
   client.respond(current.id, { confirmed: mutation !== 'cancel' }); await prompt;
   if (mutation === 'source') assert.deepEqual(JSON.parse(readFileSync(path)).roles, { 'bug-fix': 'team/custom/other:off' });
   else assert.equal(readFileSync(path, 'utf8'), expected);
-  if (['model', 'thinking', 'remove', 'revoke'].includes(mutation)) assert.ok(client.records.some(e => e.method === 'notify' && /preview changed or became invalid/.test(e.message)));
+  if (['model', 'thinking', 'remove', 'revoke', 'reregister-revoke'].includes(mutation)) assert.ok(client.records.some(e => e.method === 'notify' && /preview changed or became invalid/.test(e.message)));
   if (mutation === 'destination') assert.ok(client.records.some(e => e.method === 'notify' && /changed during setup/.test(e.message)));
   if (mutation === 'lock') assert.ok(existsSync(path + '.lock'));
   if (mutation === 'collision') assert.ok(client.records.some(e => e.method === 'notify' && /Command collision setup-pstack/.test(e.message)));
