@@ -1,6 +1,6 @@
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdirSync, writeFileSync, rmSync, existsSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { packed, isolated, captures, rpc } from './helpers.mjs';
 
@@ -37,10 +37,10 @@ test('literal extension user messages reach the provider without changing mode',
   assert.deepEqual(await modeEntries(client), before);
 });
 
-test('only ASCII-space native skill grammar activates mode', { timeout: 30000 }, async t => {
+test('near-match commands stay literal and do not activate mode', { timeout: 30000 }, async t => {
   const run = await start(t, 'grammar');
   const client = run.connect();
-  for (const text of ['/skill:poteto-mode\tTAB_TASK', '/skill:poteto-mode\nNEWLINE_TASK', '/skill:poteto-mode\n']) {
+  for (const text of ['/skill:poteto-mode-other TASK', '/poteto-mode-other TASK', '/potete-mode-extra\nTASK']) {
     await client.turn(text);
     const request = captures(run.iso.env).at(-1);
     assert.doesNotMatch(request.system, /<pi-mstack-mode>/);
@@ -60,15 +60,16 @@ test('busy mode requests refuse without persisting or queuing their tasks', { ti
   const settled = client.wait(e => e.type === 'agent_settled');
   await client.send('prompt', { message: 'BUSY_ON' });
   const startIndex = client.records.length;
-  for (const message of ['/skill:poteto-mode off', '/poteto-mode off', '/skill:poteto-mode REFUSED_TASK']) {
+  for (const message of ['/skill:poteto-mode off', '/poteto-mode off', '/skill:poteto-mode REFUSED_TASK', '/poteto-mode \nREFUSED_TASK', '/potete-mode\nREFUSED_TASK', '/pstack default on']) {
     const response = await client.send('prompt', { message, streamingBehavior: 'followUp' });
     assert.equal(response.disposition, 'handled');
   }
   await client.send('prompt', { message: 'AFTER_REFUSAL', streamingBehavior: 'followUp' });
   await settled;
   assert.deepEqual(await modeEntries(client), before);
+  assert.equal(existsSync(join(run.iso.agentDir, 'pstack/models.json')), false);
   const notices = client.records.slice(startIndex).filter(e => e.method === 'notify').map(e => e.message);
-  assert.equal(notices.filter(text => /request refused while the agent is busy/.test(text)).length, 3);
+  assert.equal(notices.filter(text => /request refused while the agent is busy/.test(text)).length, 6);
   assert.ok(!notices.some(text => /Mode disabled/.test(text)));
   const requests = captures(run.iso.env);
   assert.equal(requests.length, 2);

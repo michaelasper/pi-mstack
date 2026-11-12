@@ -14,6 +14,8 @@ test('versioned role boundary preserves full IDs, ordered repeated panels and in
   assert.throws(() => parseConfig({ version: 'pi-mstack/1', roles: { 'arena runners': [] } }), /Invalid/);
   const input = { version: 'pi-mstack/1', roles: { 'arena runners': ['auto', 'auto'], 'how explorer': 'provider/owner/model:high' } };
   assert.deepEqual(parseConfig(input), input);
+  for (const potetoModeDefault of [true, false]) assert.deepEqual(parseConfig({ ...input, potetoModeDefault }), { ...input, potetoModeDefault });
+  for (const potetoModeDefault of ['on', 'false', 1, null, {}]) assert.throws(() => parseConfig({ ...input, potetoModeDefault }), /Invalid/);
 });
 
 test('setup writes atomically with restrictive mode and refuses stale writes', t => {
@@ -84,6 +86,9 @@ test('mode reduction follows only ancestors, including explicit off', () => {
   assert.equal(enabledOnBranch(manager.getBranch()), true);
   manager.resetLeaf();
   assert.equal(enabledOnBranch(manager.getBranch()), false);
+  assert.equal(enabledOnBranch(manager.getBranch(), true), true);
+  manager.appendCustomEntry('pi-mstack/mode', { version: 1, enabled: false });
+  assert.equal(enabledOnBranch(manager.getBranch(), true), false);
 });
 
 test('picker scope and role status are distinct, explicit parent defeats omission', () => {

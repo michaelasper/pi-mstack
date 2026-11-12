@@ -1,5 +1,7 @@
 # Pstack port design
 
+This is the original design record. The current [configuration reference](configuration.md) supersedes its command-routing details: short mode routes now use input transforms, and saved defaults are supported.
+
 ## Goal and consumer contract
 
 Port Cursor pstack to pi without creating a manually maintained workflow fork. Users get the upstream skill set, native persistent Poteto Mode, configurable model roles, and explicit capability gaps. Maintainers get a pinned source snapshot and a reproducible update command.
