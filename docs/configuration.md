@@ -39,6 +39,20 @@ Saving uses a same-directory temporary file and atomic rename with mode `0600`. 
 
 An incompatible preexisting file, including an empty or whitespace-only file, is never overwritten automatically. A missing file alone receives defaults. An existing configuration lock refuses writes with recovery instructions. Confirm no setup writer is running before manually removing a stale lock. Headless setup reports the location and current state without choosing or saving models. RPC supports the host's select, input, and confirm dialog protocol.
 
+## Legacy role import
+
+`/setup-pstack import <path>` imports a legacy role-line layout, not arbitrary Markdown or unmodified Cursor model slugs. Only exact `provider/model[:thinking]`, `auto`, and `inherit-parent` values are accepted. Historical slugs and space-separated thinking require manual rewriting. Unknown or retired role labels reject the file. Budget comments are ignored, not converted to thinking levels.
+
+The path remainder is one literal path, including spaces. Matching single or double outer quotes are optional. Empty paths, embedded delimiter quotes, unmatched quotes, trailing text after quoted paths, NUL, and newlines are rejected. Unquoted paths cannot contain quotes. Relative paths resolve against the session working directory. Only `~` and `~/` expand, including inside quotes. There is no shell evaluation, environment interpolation, globbing, or `~otheruser` expansion.
+
+The source must be a regular UTF-8 file of at most 1 MiB. Invalid UTF-8 is fatal. The parser accepts one leading BOM, LF or CRLF, blank lines, hash comment lines, and optional opaque frontmatter bounded by exact `---` lines at the start. Standalone CR, misplaced or unclosed frontmatter, fences, bullets, duplicate labels, and empty or comment-only files are rejected. Errors identify the source line and role where known. No valid subset is imported after an error.
+
+Assignments split at the first colon. Commas in role labels remain part of the label. Panel values split on commas and retain order, duplicates, and one-seat arrays. Scalars remain strings. Panel model IDs containing commas are not representable. Inline hash characters are literal, not comments.
+
+The confirmation shows the resolved source, destination, preserved default-mode value, exact roles JSON, and full effective role table. Import replaces every configured role assignment. Roles absent from the source inherit the parent. `potetoModeDefault` remains unchanged, including its absence. The source is never written or reread after preview.
+
+Import refreshes the local registry without network discovery before preview and after confirmation. Any registry refresh failure or registry error, including errors from unrelated providers, blocks import before writing. Every effective role must resolve uniquely to an authenticated model with supported thinking. Outside-picker choices retain their annotation. Changed or invalid effective previews abort with a retry message. Resource ownership and destination bytes are checked again before saving. Cancellation, validation failure, lock conflicts, and competing writes leave the destination untouched by the importer. Import requires confirmation UI and never writes in print or JSON mode. Native preflight remains authoritative.
+
 ## Commands and mode
 
 Multiline short prompts and saved defaults require version 0.2.0 or later. The accidental `potete-mode` alias is removed in 0.3.0.
@@ -54,6 +68,7 @@ Multiline short prompts and saved defaults require version 0.2.0 or later. The a
 | `/pstack default on` / `/pstack default off` | Saves the default for branches without an explicit on/off choice; preserves role settings. |
 | `/pstack default` | Reports the saved default without changing it. |
 | `/setup-pstack` | Opens transactional setup, or reports instructions headlessly. |
+| `/setup-pstack import <path>` | Previews and replaces roles from a strict legacy layout. |
 | `/pstack doctor` | Reports mode, roles, collisions, and observable dependency tools. |
 
 Mode requests and default-setting writes while the agent is busy are refused. No mode entry or default change is persisted and no task is queued. Retry after settlement. Short and native skill routes accept same-line and multiline tasks; the input hook normalizes them before native skill expansion, without forwarding another user message. Extension-origin messages are left untouched and do not activate persistent mode, even when an extension opts into skill expansion.

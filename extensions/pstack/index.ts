@@ -1,9 +1,11 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, openSync, closeSync, fstatSync, readSync, constants } from 'node:fs';
+import { homedir } from 'node:os';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { getAgentDir, stripFrontmatter, type ExtensionAPI, type ExtensionContext, type SessionEntry } from '@earendil-works/pi-coding-agent';
 import { getSupportedThinkingLevels } from '@earendil-works/pi-ai';
-import { configPath, loadConfig, modelChoices, parseConfig, policyStatus, roleData, roles, saveConfig } from './config.ts';
+import { configPath, inspectRoles, loadConfig, modelChoices, parseConfig, policyStatus, roleData, roles, saveConfig } from './config.ts';
+import { parseImportPath, parseLegacyRoles } from './import.ts';
 
 import { sameFile } from './resources.ts';
 import { registerGoal } from './goal.ts';
@@ -161,11 +163,47 @@ export default function pstack(pi: ExtensionAPI) {
   });
   pi.registerCommand('setup-pstack', {
     description: 'Transactionally configure exact role selectors and ordered panels.',
-    handler: async (_args, ctx) => {
+    handler: async (args, ctx) => {
       if (!ownsResources(ctx)) return;
+      let source: string | undefined;
+      if (args.trim()) {
+        try {
+          const input = parseImportPath(args);
+          source = resolve(ctx.cwd, input === '~' ? homedir() : input.startsWith('~/') ? resolve(homedir(), input.slice(2)) : input);
+        } catch (error) { report(ctx, String(error), true); return; }
+      }
       const state = loadConfig(path);
       if (state.kind === 'invalid') { report(ctx, `Refusing to overwrite ${path}. ${state.diagnostic}`, true); return; }
       if (!ctx.hasUI) { report(ctx, `${path}\n${JSON.stringify(state.config, null, 2)}\nUse interactive /setup-pstack to choose authenticated, scoped models. No changes written.`); return; }
+      if (source !== undefined) {
+        try {
+          const fd = openSync(source, constants.O_RDONLY | constants.O_NONBLOCK);
+          let text: string;
+          try {
+            if (!fstatSync(fd).isFile()) throw Error('Import source must be a regular file');
+            const bytes = Buffer.alloc(1024 * 1024 + 1);
+            let size = 0, count: number;
+            while (size < bytes.length && (count = readSync(fd, bytes, size, bytes.length - size, null)) > 0) size += count;
+            if (size === bytes.length) throw Error('Import source exceeds 1 MiB');
+            text = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(bytes.subarray(0, size));
+          } finally { closeSync(fd); }
+          const draft = parseConfig({ ...state.config, roles: parseLegacyRoles(text) });
+          const refreshed = await ctx.modelRegistry.refresh({ allowNetwork: false, signal: AbortSignal.timeout(5000) });
+          if (refreshed.aborted || refreshed.errors.size || ctx.modelRegistry.getError()) throw Error('Registry refresh failed. Configuration unchanged. Retry the import.');
+          const preview = inspectRoles(draft, ctx);
+          if (!preview.valid) throw Error(`Import blocked. Configuration unchanged.\n${preview.table}`);
+          const message = `Source: ${source}\nDestination: ${path}\nReplace ALL configured role assignments. Omitted roles inherit the parent.\nPreserved potetoModeDefault: ${draft.potetoModeDefault ?? 'absent'}\n\nConfigured roles to save:\n${JSON.stringify(draft.roles, null, 2)}\n\nEffective roles:\n${preview.table}`;
+          if (!(await ctx.ui.confirm('Import pstack role configuration?', message))) return;
+          const rechecked = await ctx.modelRegistry.refresh({ allowNetwork: false, signal: AbortSignal.timeout(5000) });
+          if (rechecked.aborted || rechecked.errors.size || ctx.modelRegistry.getError()) throw Error('Registry refresh failed. Configuration unchanged. Retry the import.');
+          if (!ownsResources(ctx)) return;
+          const fresh = inspectRoles(draft, ctx);
+          if (!fresh.valid || fresh.table !== preview.table) throw Error('Import preview changed or became invalid. Configuration unchanged. Retry the import.');
+          saveConfig(path, draft, state.original);
+          report(ctx, 'Role configuration imported. Native preflight still required.');
+        } catch (error) { report(ctx, `${source}: ${String(error)}`, true); }
+        return;
+      }
       const choices = modelChoices(ctx);
       const selectors = ['inherit-parent', ...choices.flatMap(model => getSupportedThinkingLevels(model).map(level => `${model.provider}/${model.id}:${level}`))];
       const draft = structuredClone(state.config);
