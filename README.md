@@ -1,56 +1,78 @@
 # pi-mstack
 
-Use pstack's task playbooks in Pi without replacing Pi's native child agents or scheduling.
+**Bring pstack’s task playbooks to Pi—without replacing its native agents or scheduling.**
 
-[Documentation](docs/index.md) · [First session](docs/tutorials/first-session.md) · [Configuration](docs/configuration.md) · [Maintenance](docs/maintenance.md)
+[![npm][npm-badge]][npm-url] [![CI][ci-badge]][ci-url] [![MIT licence][licence-badge]](LICENSE)
 
-## Why
+[Quick start](#quick-start) · [Documentation](docs/index.md) · [Changelog](CHANGELOG.md) · [Report an issue](https://github.com/michaelasper/pi-mstack/issues)
 
-If you use Cursor pstack's review and implementation workflows but work in Pi, this package ports the skills and their host instructions. It preserves the pinned upstream source for inspection and repeatable updates.
+## Why pi-mstack?
 
-- Invoke 58 upstream skill names, with an explicit notice for the unsupported bot workflow.
-- Keep Poteto Mode on for one session branch, or invoke a skill on its own.
-- Choose exact authenticated models and ordered review panels without Cursor model aliases.
-- See missing capabilities and blocked model choices before relying on them.
+If you use Cursor pstack’s review and implementation workflows but work in Pi, this package brings those playbooks into your existing environment. Use a skill for one task, or enable Poteto Mode to keep the playbook active for a session branch.
 
-This is a public source package, installed from a checkout. The first npm publication is still pending. [Release preparation](docs/how-to/release.md) covers versioning, CI, and explicit publication approval. It does not provide Cursor cloud agents, Benny automation, Bugbot, or a replacement for required product verification.
+- Access 58 upstream skill names, including an explicit unsupported notice for the bot workflow.
+- Keep mode branch-local, send multiline tasks, and save your preferred default.
+- Choose exact authenticated models and ordered review panels instead of Cursor model aliases.
+- Diagnose missing capabilities and blocked model choices before relying on them.
+- Inspect the pinned upstream source and reproduce reviewed updates.
+
+This is not Cursor cloud agents, Benny automation, Bugbot, or a substitute for required product verification. Native agents and scheduling come from the separately installed extensions below.
 
 ## Install
 
-Use Node.js 22.19 or later and Pi 1.5.0. Install the execution extensions separately, then install this checkout. These commands are an installation example, not a claim that anything was installed globally during verification.
+Requires **Node.js 22.19 or later** and **Pi 1.5.0**. Install from npm through Pi’s package manager:
 
 ```sh
-git clone https://github.com/michaelasper/pi-mstack.git
-cd pi-mstack
-npm ci --ignore-scripts
 pi install npm:@trevonistrevon/pi-loop@0.7.19
 pi install npm:pi-subagents@0.86.0
-pi install "$PWD"
+pi install npm:pi-mstack
 ```
 
-The tested combination is Pi 1.5.0, pi-loop 0.7.19, and pi-subagents 0.86.0. Other versions are unverified. Disable competing pstack ports before loading this package. A conflicting mode or setup resource blocks activation rather than choosing another package silently.
+Restart Pi after installation. Disable competing pstack ports first; conflicting mode or setup resources block activation rather than silently choosing a package.
+
+See [installation and updates](docs/how-to/install.md) for version pinning, checkout installation, and troubleshooting, or [compatibility](docs/reference/compatibility.md) for tested combinations.
 
 ## Quick start
 
-In Pi, use these distinct operations.
+In Pi, run `/pstack doctor` to check that the extension loaded. Then choose your next step:
 
-- `/skill:poteto-mode Fix the parser bug and prove the regression.` starts a task under the playbook.
-- `/setup-pstack` chooses role models and ordered panels, then asks for confirmation before saving.
-- `/pstack doctor` reports mode, configuration, resource collisions, and observable native tools.
+| Goal | Command |
+| --- | --- |
+| Configure role models and review panels | `/setup-pstack` |
+| Start a task under the playbook | `/skill:poteto-mode Fix the parser bug and prove the regression.` |
+| Use a standalone skill | `/skill:how Explain this parser` |
+
+Setup asks for confirmation before saving. Task and skill requests use your configured model and may incur provider charges. For a no-inference walkthrough, follow [your first Pi session](docs/tutorials/first-session.md).
 
 ## Usage
 
-Bare `/poteto-mode` enables persistent mode without inference. `/poteto-mode off` disables it. Forks inherit only their ancestors' mode entries. A new session starts with mode off.
+Bare `/poteto-mode` enables persistent mode without sending a model request. `/poteto-mode off` disables it for the active branch. Forks inherit their ancestors’ mode choices.
 
-Use `/skill:how Explain this parser` for a standalone skill. Configured role data remains available with mode off.
+To enable mode and start a task, put the task on the same line or a new line. For example:
 
-Use `/skill:poteto-mode <task>` for tasks in the TUI, RPC, print, and JSON modes. Busy mode requests refuse without changing state or queuing the task. Retry after settlement. The short `/poteto-mode <task>` form is deliberately unsupported. Actual one-shot CLI tests show that command forwarding can start a request without retaining its completed output.
+```text
+/poteto-mode
+Fix the parser bug and prove the regression.
+```
 
-## Configuration and limits
+`/potete-mode` is an alias. These routes work in TUI, RPC, print, and JSON modes. If Pi is busy, the request is refused without changing mode or queuing the task; retry after settlement.
 
-Configuration lives in `pstack/models.json` under Pi's agent directory, normally `~/.pi/agent`. It is separate from Pi's model catalogue. Missing configuration inherits the exact current parent model. Invalid or unavailable explicit choices remain blockers, not silent defaults.
+Use `/pstack default on` or `/pstack default off` to save the default; `/pstack default` shows it. Sessions and branches without an explicit choice follow that preference. An explicit `/poteto-mode off` always overrides a default of on.
 
-[Configuration reference](docs/configuration.md) describes selectors and native policy checks. [The generated Pi adapter](generated/docs/harness/pi.md) defines tool mappings and mandatory gates. Native preflight remains authoritative. Worktrees are not cloud sandboxes, and pi-loop needs an active host.
+## Documentation
+
+Choose the kind of help you need:
+
+| Need | Start here |
+| --- | --- |
+| **Tutorial** — learn by doing | [Your first Pi session](docs/tutorials/first-session.md) |
+| **How-to** — complete a task | [Install or update](docs/how-to/install.md) · [Configure models](docs/how-to/configure-models.md) |
+| **Reference** — look up facts | [Commands and configuration](docs/configuration.md) · [Compatibility](docs/reference/compatibility.md) |
+| **Explanation** — understand the design | [Source, adaptation, and execution](docs/explanation/architecture.md) |
+
+Configuration lives in `pstack/models.json` under Pi’s agent directory, normally `~/.pi/agent`. Missing configuration inherits the exact current parent model; invalid explicit choices remain blockers. Native preflight remains authoritative, worktrees are not cloud sandboxes, and pi-loop needs an active host.
+
+The [documentation index](docs/index.md) also covers maintenance, verification, and releases. The [generated Pi adapter](generated/docs/harness/pi.md) defines tool mappings and mandatory gates.
 
 ## Development
 
@@ -61,10 +83,16 @@ npm run typecheck
 npm test
 ```
 
-`npm test` includes packed-package CLI, PTY, RPC, SDK, and native dependency contracts with a local scripted provider. It needs Git, tar, Python 3, and a POSIX environment. It does not use paid inference or ambient credentials. It does not run upstream renderer, Java, TLC, or forge integrations.
+Tests cover packed-package CLI, PTY, RPC, SDK, and native dependency contracts using a local scripted provider, without paid inference or ambient credentials. They require Git, tar, Python 3, and a POSIX environment. Upstream renderer, Java, TLC, and forge integrations are separate from `npm test`.
 
-For changes, edit `port/`, `tools/`, or `extensions/`, not the snapshot or generated resources. [Maintenance](docs/maintenance.md) covers reviewed updates and recovery. [Verification](docs/verification.md) separates API evidence from untested model behaviour.
+Open a pull request for changes. Edit `port/`, `tools/`, or `extensions/`, not the snapshot or generated resources. Follow [maintenance](docs/maintenance.md) for reviewed updates and recovery, and [verification](docs/verification.md) for evidence limits.
 
-## Licence
+## Licence and attribution
 
-[MIT](LICENSE). The original Cursor pstack attribution and 573 source records come from commit `2776ddd2355d6d6c8747d3964600f28daf62f049`. The manifest records literal-byte hashes and Git modes. Standard npm packaging requires one documented storage-name exception for `.gitignore`.
+[MIT](LICENSE). The original Cursor pstack attribution and 573 source records come from commit `2776ddd2355d6d6c8747d3964600f28daf62f049`. The manifest records literal-byte hashes and Git modes; npm packaging requires one documented storage-name exception for `.gitignore`.
+
+[npm-badge]: https://img.shields.io/npm/v/pi-mstack
+[npm-url]: https://www.npmjs.com/package/pi-mstack
+[ci-badge]: https://github.com/michaelasper/pi-mstack/actions/workflows/ci.yml/badge.svg?branch=main
+[ci-url]: https://github.com/michaelasper/pi-mstack/actions/workflows/ci.yml
+[licence-badge]: https://img.shields.io/github/license/michaelasper/pi-mstack

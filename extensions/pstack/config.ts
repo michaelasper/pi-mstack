@@ -13,6 +13,7 @@ export const roles = roleInput;
 const SelectionSchema = Type.String({ pattern: '^(inherit-parent|auto|[^\\s/]+/[^\\s]+)$' });
 const ConfigSchema = Type.Object({
   version: Type.Literal('pi-mstack/1'),
+  potetoModeDefault: Type.Optional(Type.Boolean()),
   roles: Type.Record(Type.String(), Type.Union([SelectionSchema, Type.Array(SelectionSchema, { minItems: 1 })])),
 }, { additionalProperties: false });
 export type Config = Static<typeof ConfigSchema>;

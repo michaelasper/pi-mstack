@@ -5,14 +5,17 @@ import { getSupportedThinkingLevels } from '@earendil-works/pi-ai';
 import { configPath, loadConfig, modelChoices, parseConfig, policyStatus, roleData, roles, saveConfig } from './config.ts';
 
 export const modeType = 'pi-mstack/mode';
-export function enabledOnBranch(entries: readonly SessionEntry[]): boolean {
-  let enabled = false;
+function branchMode(entries: readonly SessionEntry[]): boolean | undefined {
+  let enabled: boolean | undefined;
   for (const entry of entries) {
     if (entry.type !== 'custom' || entry.customType !== modeType) continue;
     const data: unknown = entry.data;
     if (typeof data === 'object' && data !== null && 'version' in data && data.version === 1 && 'enabled' in data && typeof data.enabled === 'boolean') enabled = data.enabled;
   }
   return enabled;
+}
+export function enabledOnBranch(entries: readonly SessionEntry[], defaultEnabled = false): boolean {
+  return branchMode(entries) ?? defaultEnabled;
 }
 export default function pstack(pi: ExtensionAPI) {
   const ownPath = fileURLToPath(import.meta.url);
@@ -23,11 +26,21 @@ export default function pstack(pi: ExtensionAPI) {
     if (ctx.hasUI) ctx.ui.notify(text, error ? 'error' : 'info');
     else process.stderr.write(`pi-mstack: ${text}\n`);
   };
+  const defaultMode = () => {
+    const state = loadConfig(path);
+    return state.kind === 'valid' && state.config.potetoModeDefault === true;
+  };
+  const isEnabled = (ctx: ExtensionContext) => enabledOnBranch(ctx.sessionManager.getBranch(), defaultMode());
   function collisions() {
     const commands = pi.getCommands(), problems: string[] = [];
-    for (const name of ['poteto-mode', 'setup-pstack', 'pstack']) {
+    for (const name of ['setup-pstack', 'pstack']) {
       const matches = commands.filter(c => c.source === 'extension' && (c.name === name || c.name.startsWith(name + ':')));
       if (matches.length !== 1 || matches[0].name !== name || resolve(matches[0].sourceInfo.path) !== ownPath) problems.push(`Command collision ${name}: ${JSON.stringify(matches.map(c => ({ name: c.name, sourceInfo: c.sourceInfo })))}`);
+    }
+    for (const name of ['poteto-mode', 'potete-mode']) {
+      const promptPath = resolve(root, 'extensions/pstack/prompts', name + '.md');
+      const foreign = commands.filter(c => (c.name === name || c.name.startsWith(name + ':')) && (c.source !== 'prompt' || resolve(c.sourceInfo.path) !== promptPath));
+      if (foreign.length) problems.push(`Command collision ${name}: ${JSON.stringify(foreign.map(c => c.sourceInfo))}`);
     }
     for (const name of ['poteto-mode', 'setup-pstack']) {
       const matches = commands.filter(c => c.name === `skill:${name}`);
@@ -40,61 +53,76 @@ export default function pstack(pi: ExtensionAPI) {
     if (problems.length) report(ctx, problems.join('\n') + '\nDisable the conflicting port or resource and reload. State is unchanged.', true);
     return problems.length === 0;
   }
-  function setMode(ctx: ExtensionContext, enabled: boolean) {
+  function canChangeMode(ctx: ExtensionContext) {
     if (!ownsResources(ctx)) return false;
     if (!ctx.isIdle()) {
       report(ctx, 'Poteto Mode request refused while the agent is busy. State is unchanged and the task was not queued. Retry after the agent settles.', true);
       return false;
     }
-    if (enabledOnBranch(ctx.sessionManager.getBranch()) !== enabled) pi.appendEntry(modeType, { version: 1, enabled });
+    return true;
+  }
+  function setMode(ctx: ExtensionContext, enabled: boolean) {
+    if (!canChangeMode(ctx)) return false;
+    if (branchMode(ctx.sessionManager.getBranch()) !== enabled) pi.appendEntry(modeType, { version: 1, enabled });
     ctx.ui.setStatus('pi-mstack', enabled ? 'Poteto Mode' : undefined);
     return true;
   }
-  pi.registerCommand('poteto-mode', {
-    description: 'Enable Poteto Mode, or off. Tasks use /skill:poteto-mode.',
-    handler: async (args, ctx) => {
-      if (!ownsResources(ctx)) return;
-      const arg = args.trim();
-      if (arg && arg !== 'off') { report(ctx, 'Task-bearing short commands are unsupported. Use /skill:poteto-mode ' + arg, true); return; }
-      if (setMode(ctx, arg !== 'off')) report(ctx, arg === 'off' ? 'Poteto Mode disabled.' : 'Poteto Mode enabled.');
-    },
-  });
+  // Route prompts through the input pipeline, not a fire-and-forget command
+  // handler, so CLI callers await the same run and attachments are preserved.
   pi.on('input', (event, ctx) => {
     if (event.source === 'extension') return;
-    const match = event.text.match(/^\/skill:poteto-mode(?: (.*))?$/s);
+    const match = event.text.match(/^\/(?:skill:poteto-mode|poteto-mode|potete-mode)(?:[ \t\r\n]+([\s\S]*))?$/);
     if (!match || match[0] !== event.text) return;
     if (!ownsResources(ctx)) return { action: 'continue' };
     const task = match[1]?.trim() ?? '';
     if (!setMode(ctx, task !== 'off')) return { action: 'handled' };
-    if (!task || task === 'off') return { action: 'handled' };
-    return { action: 'continue' };
+    if (!task || task === 'off') {
+      report(ctx, task === 'off' ? 'Poteto Mode disabled.' : 'Poteto Mode enabled.');
+      return { action: 'handled' };
+    }
+    return { action: 'transform', text: `/skill:poteto-mode ${task}` };
   });
   pi.on('session_start', (_event, ctx) => {
     for (const problem of collisions()) report(ctx, problem, true);
     const state = loadConfig(path);
     if (state.kind === 'invalid') report(ctx, state.diagnostic, true);
-    ctx.ui.setStatus('pi-mstack', enabledOnBranch(ctx.sessionManager.getBranch()) ? 'Poteto Mode' : undefined);
+    ctx.ui.setStatus('pi-mstack', isEnabled(ctx) ? 'Poteto Mode' : undefined);
   });
   pi.on('session_tree', (_event, ctx) => {
-    ctx.ui.setStatus('pi-mstack', enabledOnBranch(ctx.sessionManager.getBranch()) ? 'Poteto Mode' : undefined);
+    ctx.ui.setStatus('pi-mstack', isEnabled(ctx) ? 'Poteto Mode' : undefined);
   });
   pi.on('before_agent_start', (event, ctx) => {
     const sections = event.systemPromptOptions.sections;
     delete sections['pi-mstack-mode'];
-    if (!collisions().length && enabledOnBranch(ctx.sessionManager.getBranch())) sections['pi-mstack-mode'] = `Poteto Mode is enabled on this branch. Read ${skillPath('poteto-mode')} in full before work, including the Principles index and Pi adapter. Read applicable leaves. Restore these instructions after compaction. The parent owns the playbook.`;
+    if (!collisions().length && isEnabled(ctx)) sections['pi-mstack-mode'] = `Poteto Mode is enabled on this branch. Read ${skillPath('poteto-mode')} in full before work, including the Principles index and Pi adapter. Read applicable leaves. Restore these instructions after compaction. The parent owns the playbook.`;
     const table = roleData(loadConfig(path), ctx);
     sections['pi-mstack-role-data'] = table + '\n' + policyStatus(pi.getSettings(), ctx.isProjectTrusted(), table);
   });
   pi.registerCommand('pstack', {
-    description: 'Report resource provenance, mode, roles, and native capability status.',
-    handler: async (_args, ctx) => {
+    description: 'Report diagnostics, or set default mode with default on/off.',
+    handler: async (args, ctx) => {
+      const arg = args.trim();
+      if (/^default(?:\s|$)/.test(arg)) {
+        if (arg === 'default') { report(ctx, `Poteto Mode default: ${defaultMode() ? 'on' : 'off'}. Use /pstack default on or /pstack default off.`); return; }
+        const match = arg.match(/^default (on|off)$/);
+        if (!match) { report(ctx, 'Usage: /pstack default on|off. Configuration unchanged.', true); return; }
+        if (!canChangeMode(ctx)) return;
+        const state = loadConfig(path);
+        if (state.kind === 'invalid') { report(ctx, `Refusing to overwrite ${path}. ${state.diagnostic}`, true); return; }
+        try {
+          saveConfig(path, { ...state.config, potetoModeDefault: match[1] === 'on' }, state.original);
+          ctx.ui.setStatus('pi-mstack', isEnabled(ctx) ? 'Poteto Mode' : undefined);
+          report(ctx, `Poteto Mode default saved: ${match[1]}. Explicit branch on/off choices still take precedence.`);
+        } catch (error) { report(ctx, String(error), true); }
+        return;
+      }
       const active = new Set(pi.getActiveTools());
       const tools = pi.getAllTools();
       const capabilities = ['subagents_enable', 'subagent', 'LoopCreate', 'MonitorCreate'].map(name => {
         const tool = tools.find(t => t.name === name);
         return `${name}: ${tool ? active.has(name) ? 'present' : 'inactive' : 'absent'}${tool ? ' ' + JSON.stringify(tool.sourceInfo) : ''}`;
       });
-      report(ctx, [`Mode ${enabledOnBranch(ctx.sessionManager.getBranch()) ? 'on' : 'off'}.`, ...collisions(), ...capabilities, 'Dependency versions and resolved native agent provenance unverified. Inspect native subagent list/get metadata before claiming bundled restrictions.', `Configuration ${path}`, roleData(loadConfig(path), ctx), policyStatus(pi.getSettings(), ctx.isProjectTrusted(), roleData(loadConfig(path), ctx))].join('\n'));
+      report(ctx, [`Mode ${isEnabled(ctx) ? 'on' : 'off'}; default ${defaultMode() ? 'on' : 'off'}.`, ...collisions(), ...capabilities, 'Dependency versions and resolved native agent provenance unverified. Inspect native subagent list/get metadata before claiming bundled restrictions.', `Configuration ${path}`, roleData(loadConfig(path), ctx), policyStatus(pi.getSettings(), ctx.isProjectTrusted(), roleData(loadConfig(path), ctx))].join('\n'));
     },
   });
   pi.registerCommand('setup-pstack', {

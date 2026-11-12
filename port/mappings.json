@@ -112,7 +112,7 @@
   {
     "key": "Run another pstack skill",
     "pattern": "`/[a-z][a-z-]+`|the \\*\\*[^*]+\\*\\* skill",
-    "instruction": "Read the corresponding generated SKILL.md or invoke /skill:name. Only pstack, setup-pstack, and poteto-mode have extension commands."
+    "instruction": "Read the corresponding generated SKILL.md or invoke /skill:name. pstack and setup-pstack are extension commands. poteto-mode (alias potete-mode) is handled by the input hook and accepts same-line or multiline tasks; prompt resources supply completion."
   },
   {
     "key": "loops",
