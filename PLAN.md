@@ -89,3 +89,16 @@ Workflow #3 owns this sequence. Sole writer `23a6c781-039a-4d98-88aa-4e5d970a2d4
 Parent integrated the source changes and refreshed schema-2 acceptance through proposal `.cache/proposal-3yT3KL`, reviewed digest `1f142e0089a29932768d1fc74e1b32da021bd3f821134f3fcb03f6fb4f56ddbd`. Fresh Codex and Muse reviews run in workflow `e4a76118-65d3-43e9-8962-a770228c41ba`. No publication until both accept.
 
 Model the Domain keeps selectors as exact registry identities and accepted adaptation inputs as a verifiable inventory. Prove It Works requires actual SDK regressions, packaged tests, and remote commit verification, not writer reports alone.
+
+## npm, CI and versioning preparation
+
+Workflow #4 prepares local release infrastructure without publishing npm, creating tags, changing authentication, or pushing this change.
+
+- [x] Inspect registry and package state. Initial lookup returned 404 for `pi-mstack`; `npm whoami` returned 401. This neither reserves the name nor grants publication permission.
+- [x] Prepare public npm metadata, stable SemVer/changelog rules, release metadata checks, archive integrity checks, and monotonic version guards.
+- [x] Configure pinned-action CI for Ubuntu Node 22.19/24/26 and macOS Node 26, plus a pinned upstream Git inventory job. Configure manual release dispatch with publish off by default, exact dispatched-main/tag identity, verified archive transfer, environment gate and OIDC.
+- [x] Add regression tests and Diátaxis release guide/reference.
+- [x] Verify locally. Monitor #9 passed source check, typecheck, all 57 tests with no skips, actionlint 1.7.7, real archive verification, npm publication dry-run, and whitespace checks. Log `/tmp/pi-mstack-release-preparation-3.log`. Local documentation link targets resolve.
+- [ ] Remote enablement requires commit/push approval, successful GitHub Actions runs, approved first npm publication with interactive authentication, and npm trusted-publisher plus GitHub `npm` environment protection setup.
+
+The initial fixture failure omitted upstream files and was fixed. The dry run exposed npm 12 treating a relative archive without `./` as a GitHub shorthand; workflow and documentation commands now use explicit local paths, with a regression assertion. No public npm write, release tag, credentials change or remote environment setting was performed. Configured CI coverage is not claimed as remote execution evidence.

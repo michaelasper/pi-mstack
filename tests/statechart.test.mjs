@@ -26,14 +26,17 @@ test('packed statechart checks broken and fixed models with live TLC', { skip: !
   }
 });
 
-test('statechart offline CLI and recorded-output regressions', { timeout: 120000 }, () => {
+// Hosted macOS runners exceeded the old 110-second subprocess budget.
+// Keep the child bounded, with time for the parent to report timeout diagnostics.
+test('statechart offline CLI and recorded-output regressions', { timeout: 390000 }, () => {
   const env = { ...process.env, TLA2TOOLS: '' };
   delete env.NODE_TEST_CONTEXT;
   const result = spawnSync(process.execPath, ['--test', `${scriptsPath}/test/cli.test.ts`, `${scriptsPath}/test/tlc-out.test.ts`], {
-    encoding: 'utf8', timeout: 110000,
+    encoding: 'utf8', timeout: 360000,
     env,
   });
-  assert.equal(result.status, 0, result.stdout + result.stderr + String(result.error ?? ''));
+  assert.ifError(result.error);
+  assert.equal(result.status, 0, result.stdout + result.stderr);
   assert.match(result.stdout, /tests 127\b/);
 });
 

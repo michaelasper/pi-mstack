@@ -10,6 +10,7 @@ Choose a page for what you need now. The user documentation follows [Diátaxis](
 
 - [Install or update the package](how-to/install.md).
 - [Choose role models and review panels](how-to/configure-models.md).
+- [Prepare and publish an npm release](how-to/release.md).
 - [Update upstream, recover an interrupted write, or export the original source](maintenance.md).
 
 ## Look up facts
@@ -17,6 +18,7 @@ Choose a page for what you need now. The user documentation follows [Diátaxis](
 - [Commands, configuration schema, selectors, and mode state](configuration.md).
 - [Maintenance commands, acceptance schema, and retained state](reference/maintenance.md).
 - [Compatibility and capability limits](reference/compatibility.md).
+- [Version policy, release commands, and CI](reference/releases.md).
 - [Verification contracts and coverage](verification.md).
 - [Generated Pi host mappings](../generated/docs/harness/pi.md).
 

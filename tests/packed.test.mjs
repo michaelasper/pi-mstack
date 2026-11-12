@@ -47,7 +47,7 @@ test('advertised scripts reference shipped resources and tarball excludes privat
   const root = artifact.packageRoot;
   const pkg = JSON.parse(readFileSync(join(root, 'package.json')));
   for (const [name, script] of Object.entries(pkg.scripts)) {
-    for (const path of script.match(/(?:tools|tests)\/[\w.*\/-]+/g) ?? []) {
+    for (const path of script.match(/(?:tools|tests|scripts)\/[\w.*\/-]+/g) ?? []) {
       if (path.includes('*')) assert.ok(walk(root).some(p => p.startsWith(path.split('*')[0]) && p.endsWith(path.split('*')[1])), `${name}: ${path}`);
       else assert.ok(existsSync(join(root, path)), `${name}: ${path}`);
     }

@@ -1,7 +1,12 @@
 {
   "name": "pi-mstack",
   "version": "0.1.0",
-  "private": true,
+  "private": false,
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "keywords": ["pi-package", "pi", "pstack", "agent-skills"],
   "repository": {
     "type": "git",
     "url": "https://github.com/michaelasper/pi-mstack.git"
@@ -22,9 +27,11 @@
     "upstream/",
     "port/",
     "tools/",
+    "scripts/",
     "tests/",
     "docs/",
     "LICENSE",
+    "CHANGELOG.md",
     "tsconfig.json"
   ],
   "pi": {
@@ -49,7 +56,12 @@
     "upstream:repair": "node tools/upstream.mjs repair",
     "typecheck": "tsc",
     "upstream:export": "node tools/upstream.mjs export",
-    "test:native": "node --test tests/native.test.mjs"
+    "test:native": "node --test tests/native.test.mjs",
+    "release:check": "node scripts/release.mjs check",
+    "release:pack": "node scripts/release.mjs pack",
+    "release:verify": "node scripts/release.mjs verify",
+    "prepack": "node tools/upstream.mjs check",
+    "prepublishOnly": "node scripts/release.mjs check"
   },
   "peerDependencies": {
     "@earendil-works/pi-ai": "^1.5.0",

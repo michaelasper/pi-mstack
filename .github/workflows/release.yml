@@ -1,0 +1,102 @@
+name: npm release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing reviewed tag, for example v0.1.0
+        required: true
+        type: string
+      publish:
+        description: Publish publicly to npm after environment approval
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: npm-release
+  cancel-in-progress: false
+
+env:
+  RELEASE_TAG: ${{ inputs.tag }}
+
+jobs:
+  prepare:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    outputs:
+      commit: ${{ steps.source.outputs.commit }}
+    steps:
+      - name: Validate stable tag syntax
+        run: '[[ "$RELEASE_TAG" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]'
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: refs/tags/${{ inputs.tag }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Require the tag at the dispatched main commit
+        id: source
+        run: |
+          echo "commit=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test "$(git rev-parse HEAD)" = "$(git rev-parse "refs/tags/$RELEASE_TAG^{commit}")"
+          git merge-base --is-ancestor HEAD origin/main
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: '24'
+          registry-url: https://registry.npmjs.org
+          cache: npm
+      - run: npm install --global npm@11.6.2 --ignore-scripts
+      - run: npm ci --ignore-scripts
+      - run: npm run release:check -- --tag "$RELEASE_TAG"
+      - run: npm run check
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run release:pack -- --tag "$RELEASE_TAG"
+      - run: npm run release:verify -- --tag "$RELEASE_TAG"
+      - name: Rehearse publication without credentials
+        run: npm publish "./dist/pi-mstack-${RELEASE_TAG#v}.tgz" --dry-run --ignore-scripts --access public
+      - run: git diff --exit-code
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: npm-release
+          path: dist/
+          if-no-files-found: error
+          retention-days: 30
+
+  publish:
+    if: inputs.publish && github.ref == 'refs/heads/main'
+    needs: prepare
+    environment: npm
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: ${{ needs.prepare.outputs.commit }}
+          persist-credentials: false
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: '24'
+          registry-url: https://registry.npmjs.org
+      - run: npm install --global npm@11.6.2 --ignore-scripts
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0
+        with:
+          name: npm-release
+          path: dist/
+      - run: npm run release:verify -- --tag "$RELEASE_TAG"
+      - run: node scripts/release.mjs available --tag "$RELEASE_TAG"
+      - name: Publish the verified archive using trusted publishing
+        run: npm publish "./dist/pi-mstack-${RELEASE_TAG#v}.tgz" --ignore-scripts --access public --provenance
+      - name: Verify the registry archive integrity
+        run: |
+          expected=$(node -p 'JSON.parse(require("node:fs").readFileSync("dist/release.json", "utf8")).integrity')
+          actual=$(npm view "pi-mstack@${RELEASE_TAG#v}" dist.integrity)
+          test "$actual" = "$expected"

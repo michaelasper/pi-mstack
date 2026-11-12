@@ -13,7 +13,7 @@ If you use Cursor pstack's review and implementation workflows but work in Pi, t
 - Choose exact authenticated models and ordered review panels without Cursor model aliases.
 - See missing capabilities and blocked model choices before relying on them.
 
-This is a public source package, installed from a checkout. It is not published to npm. It does not provide Cursor cloud agents, Benny automation, Bugbot, or a replacement for required product verification.
+This is a public source package, installed from a checkout. The first npm publication is still pending. [Release preparation](docs/how-to/release.md) covers versioning, CI, and explicit publication approval. It does not provide Cursor cloud agents, Benny automation, Bugbot, or a replacement for required product verification.
 
 ## Install
 

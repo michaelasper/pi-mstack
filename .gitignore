@@ -2,5 +2,6 @@
 .pi/
 node_modules/
 coverage/
+dist/
 *.tgz
 .mstack-*
