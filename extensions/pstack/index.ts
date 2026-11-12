@@ -42,7 +42,10 @@ export default function pstack(pi: ExtensionAPI) {
     const pending = pendingName;
     clearName();
     if (pending && ownsGoal() && event.messageType === 'user' && pending.sessionId === ctx.sessionManager.getSessionId() && event.prompt === pending.expected) {
-      nameSession(pi, ctx, pending.raw, loadEnvironment(getAgentDir(), ctx.cwd, ctx.isProjectTrusted()));
+      nameSession(pi, ctx, pending.raw, loadEnvironment({ agentDir: getAgentDir(), cwd: ctx.cwd, nativeTrusted: ctx.isProjectTrusted(), sessionId: ctx.sessionManager.getSessionId(), notify: text => {
+        if (ctx.hasUI) ctx.ui.notify(text, 'warning');
+        else process.stderr.write(`pi-mstack: ${text}\n`);
+      } }));
     }
   });
   const defaultMode = () => {

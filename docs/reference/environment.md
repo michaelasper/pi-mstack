@@ -20,7 +20,7 @@ The versioned `pi-mstack/naming-attempt` entry is written before the native name
 
 ## Environment configuration
 
-`PI_CODING_AGENT_DIR/pstack/environment.json` is the user file. The default agent directory is `~/.pi/agent`. A trusted project can provide `.pi/pstack/environment.json`. The project directory name follows Pi's exported `CONFIG_DIR_NAME` in rebranded hosts. This file does not change `pstack/models.json` or Pi's model catalogue.
+`PI_CODING_AGENT_DIR/pstack/environment.json` is the user file. The default agent directory is `~/.pi/agent`. An explicitly authorized, natively trusted project can provide `.pi/pstack/environment.json`. The project directory name follows Pi's exported `CONFIG_DIR_NAME` in rebranded hosts. This file does not change `pstack/models.json` or Pi's model catalogue.
 
 ```json
 {
@@ -36,7 +36,7 @@ The versioned `pi-mstack/naming-attempt` entry is written before the native name
 }
 ```
 
-The user file accepts `naming` as `task` or `off`. Project files cannot change naming policy. Missing files mean task naming, no glossary, and no sources. Invalid user or trusted-project configuration disables environment features and reports a diagnostic. Configuration is read again at each run and goal command. On-demand retrieval also revalidates it.
+The user file accepts `naming` as `task` or `off`. Project files cannot change naming policy. Missing files mean task naming, no glossary, and no sources. Invalid user or authorized project configuration disables environment features and reports a diagnostic. Configuration is read again at each run and goal command. On-demand retrieval also revalidates it.
 
 Glossary entries have `term`, `meaning`, and `availability`, which is `available`, `conditional` or `unavailable`. Exact case-sensitive project terms replace user values in place. New project terms follow user terms. One owned prompt section renders the definitions. The extension does not rewrite skill words or equate services.
 
@@ -46,13 +46,28 @@ MCP sources have `id`, `kind: "mcp"`, the exact native `mcp__server__tool` ident
 
 Configuration files are limited to 64 KiB. The merged glossary is limited to 32 entries and 8 KiB of serialized JSON. The merged source list is limited to four entries in user-then-project order. IDs must be unique across both scopes. Unknown fields are rejected.
 
-### Native trust limitation
+### Project authorization
 
-Project configuration follows `ctx.isProjectTrusted()`. That value is not proof of explicit human approval. On tested Pi 1.5.0 and 1.5.2, a custom `.pi/pstack/environment.json` alone is not a trust-triggering resource. With no saved decision or trust override, Pi can report trusted even when `defaultProjectTrust` is `never`. Such a project environment is read.
+Project environment loading requires both native project trust and an exact grant in the user agent directory's `pstack/environment-grants.json`.
 
-The native `--no-approve` flag reports the session untrusted and prevents this extension from reading project environment configuration or its memory sources. User configuration remains available. A protected native resource such as `.pi/settings.json` triggers normal trust resolution. The extension does not create that file or implement its own permission manager. Review native trust before opening an unfamiliar project.
+```json
+{
+	"version": "pi-mstack/environment-grants/1",
+	"projects": ["/absolute/canonical/project"]
+}
+```
 
-The public extension API offers a `project_trust` handler for decisions the host requests. It does not offer registration of additional trust-triggering configuration files. Resource discovery runs after trust resolution. This limitation needs independent security review when deciding whether project environment defaults meet your deployment's trust requirements.
+Each entry is an absolute canonical directory path, as reported by `pwd -P` inside that project. Grants match only that exact root. They do not cover parents, children, siblings, path prefixes, or globs. A symlink alias for the current working directory resolves to its canonical root before matching. Grant entries themselves must be canonical, existing directories.
+
+The grant file accepts only `version` and `projects`. It is limited to 64 KiB, 256 entries, and 4096 characters per path. Missing, malformed, unreadable, or unsafe grants authorize no project. One invalid entry invalidates the grant file. Grant files must be regular files without symlink components below the user agent root. Storage inside the current canonical project cannot authorize that project. Project-local grant files and self-approval fields have no authority.
+
+Native trust alone is not authorization. Pi can implicitly trust a directory that contains only custom environment configuration. Conversely, native denial, including `--no-approve`, overrides an exact grant. Saved native approvals and CLI approval do not replace the grant file.
+
+Ignored project configuration is detected through path metadata without reading its contents or discovering its sources. Malformed ignored content cannot disable valid user configuration. A diagnostic names the JSON-quoted ignored path once per session and path across both extension entry points. The diagnostic goes to the UI or stderr, never model context. An absent project configuration produces no diagnostic. Diagnostic keys remain in memory for the process lifetime.
+
+Grants authorize future content at the same canonical path, not a reviewed content digest. Grants are read again at startup, each run, each goal command, and each on-demand retrieval. Startup does not retrieve sources. Removing a grant denies the next load. Adding it again permits the next load if native trust remains active. Revocation cannot retract previous provider requests or historical tool results, and does not cancel an in-flight retrieval. File checks do not provide a sandbox against concurrent filesystem changes by another process running as the same user.
+
+See [authorize project context](../how-to/configure-context.md#authorize-project-context) for manual grant editing.
 
 ## Retrieval and privacy
 

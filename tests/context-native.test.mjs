@@ -1,9 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdirSync, writeFileSync, readFileSync, existsSync, rmSync } from 'node:fs';
+import { mkdirSync, writeFileSync, readFileSync, existsSync, rmSync, realpathSync, renameSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { randomUUID } from 'node:crypto';
-import { packed, isolated, captures, rpc } from './helpers.mjs';
+import { spawnSync } from 'node:child_process';
+import { cli, packed, isolated, captures, rpc } from './helpers.mjs';
 
 const sub = resolve('node_modules/pi-subagents');
 const config = (sources, glossary = []) => ({ version: 'pi-mstack/environment/1', sources, glossary });
@@ -18,7 +19,7 @@ async function setup(t, name, settings = {}, options = { mcp: true }, beforeStar
   mkdirSync(join(iso.agentDir, 'pstack'));
   const serverLog = join(dir, 'server.jsonl');
   writeFileSync(join(iso.agentDir, 'mcp.json'), JSON.stringify({ mcpServers: { docs: { command: process.execPath, args: [join(artifact.packageRoot, 'tests/fixtures/mcp-server.mjs'), serverLog], exposure: 'direct' } } }));
-  beforeStart({ ...iso, ...artifact, dir, serverLog });
+  Object.assign(iso, beforeStart({ ...iso, ...artifact, dir, serverLog }));
   const client = rpc({ dir, ...iso });
   t.after(async () => {
     writeFileSync(join(dir, 'evidence.json'), JSON.stringify({ records: client.records, requests: captures(iso.env), server: readLines(serverLog) }, null, 2));
@@ -144,7 +145,7 @@ test('native automatic memory refreshes next run, never persists, and untrusted 
   assert.doesNotMatch(JSON.stringify((await s.client.send('get_entries')).entries), /AUTO_FIRST|AUTO_SECOND/);
 });
 
-test('native trust distinguishes implicit bare-config trust from explicit denial without a second permission manager', { timeout: 30000 }, async t => {
+test('native trust alone never authorizes project environment', { timeout: 30000 }, async t => {
   for (const mode of ['bare', 'denied', 'protected']) {
     const s = await setup(t, 'trust-' + mode, {}, { mcp: false }, iso => {
       mkdirSync(join(iso.dir, '.pi/pstack'), { recursive: true });
@@ -162,8 +163,8 @@ test('native trust distinguishes implicit bare-config trust from explicit denial
     const request = captures(s.env).at(-1);
     assert.match(JSON.stringify(request.messages), /USER_MEMORY_SENTINEL/);
     if (mode === 'bare') {
-      assert.match(JSON.stringify(request.messages), /PROJECT_MEMORY_SENTINEL/);
-      assert.match(request.system, /PROJECT_GLOSSARY_SENTINEL/);
+      assert.doesNotMatch(JSON.stringify(request.messages), /PROJECT_MEMORY_SENTINEL/);
+      assert.doesNotMatch(request.system, /PROJECT_GLOSSARY_SENTINEL/);
     } else {
       assert.doesNotMatch(JSON.stringify(request), /PROJECT_MEMORY_SENTINEL|PROJECT_GLOSSARY_SENTINEL/);
       writeFileSync(join(s.dir, '.pi/pstack/environment.json'), '{INVALID_PROJECT');
@@ -173,4 +174,92 @@ test('native trust distinguishes implicit bare-config trust from explicit denial
     }
     await s.client.stop();
   }
+});
+
+test('native grants refresh and diagnostics deduplicate across context, goal and pending naming', { timeout: 30000 }, async t => {
+  const s = await setup(t, 'grant-refresh', { defaultTools: ['+pstack_context'] }, { mcp: true }, iso => {
+    mkdirSync(join(iso.dir, '.pi/pstack'), { recursive: true });
+    writeFileSync(join(iso.dir, '.pi/pstack/environment.json'), '{IGNORED_MALFORMED');
+    const userMemory = join(iso.dir, 'user-memory'); writeFileSync(userMemory, 'USER_REMAINS');
+    writeFileSync(join(iso.agentDir, 'pstack/environment.json'), JSON.stringify(config([{ id: 'user', kind: 'memory', path: userMemory, delivery: 'automatic' }])));
+    const agentDir = iso.dir + '-agent'; renameSync(iso.agentDir, agentDir);
+    iso.env.PI_CODING_AGENT_DIR = agentDir;
+    return { agentDir };
+  });
+  await s.client.send('get_state');
+  assert.equal(captures(s.env).length, 0);
+  const warnings = () => s.client.records.filter(e => e.method === 'notify' && /Ignored project environment configuration/.test(e.message));
+  assert.equal(warnings().length, 1, JSON.stringify(warnings()));
+  await s.client.turn('NAME-19 accepted plain task');
+  assert.equal((await s.client.send('get_state')).sessionName, 'NAME-19');
+  await s.client.send('prompt', { message: '/goal Keep user configuration' });
+  await s.plan([{ name: 'pstack_context', arguments: { source: 'project', query: 'denied' } }]);
+  assert.equal(toolResult(s.client, 'pstack_context').isError, true);
+  assert.equal(warnings().length, 1, JSON.stringify(warnings()));
+  assert.match(warnings()[0].message, /environment\.json"/);
+  assert.doesNotMatch(JSON.stringify(captures(s.env)), /Ignored project environment configuration|IGNORED_MALFORMED/);
+  const grantFile = join(s.agentDir, 'pstack/environment-grants.json');
+  const grant = () => writeFileSync(grantFile, JSON.stringify({ version: 'pi-mstack/environment-grants/1', projects: [realpathSync(s.dir)] }));
+  writeFileSync(join(s.dir, 'project-memory'), 'GRANTED_AUTO');
+  writeFileSync(join(s.dir, '.pi/pstack/environment.json'), JSON.stringify(config([
+    { id: 'project', kind: 'mcp', tool: 'mcp__docs__search', queryArgument: 'query' },
+    { id: 'auto', kind: 'memory', path: 'project-memory', delivery: 'automatic' },
+  ], [{ term: 'Project', meaning: 'GRANTED_GLOSSARY', availability: 'available' }])));
+  grant();
+  await s.plan([{ name: 'pstack_context', arguments: { source: 'project', query: 'approved' } }]);
+  assert.equal(toolResult(s.client, 'pstack_context').isError, false);
+  assert.equal(readLines(s.serverLog).length, 1);
+  assert.match(JSON.stringify(captures(s.env).at(-1).messages), /GRANTED_AUTO/);
+  assert.match(captures(s.env).at(-1).system, /GRANTED_GLOSSARY/);
+  rmSync(grantFile);
+  await s.plan([{ name: 'pstack_context', arguments: { source: 'project', query: 'revoked' } }]);
+  assert.equal(toolResult(s.client, 'pstack_context').isError, true);
+  assert.equal(readLines(s.serverLog).length, 1);
+  assert.doesNotMatch(captures(s.env).at(-1).system, /GRANTED_GLOSSARY/);
+  const latest = captures(s.env).at(-1).messages.filter(m => m.role === 'user');
+  assert.doesNotMatch(JSON.stringify(latest), /GRANTED_AUTO/);
+  assert.match(JSON.stringify(latest), /USER_REMAINS/);
+  grant(); await s.client.turn('Reapproved');
+  assert.match(captures(s.env).at(-1).system, /GRANTED_GLOSSARY/);
+  assert.equal(warnings().length, 1);
+  rmSync(grantFile);
+  await s.client.send('new_session');
+  await s.client.turn('New session');
+  assert.equal(warnings().length, 2);
+});
+
+test('native explicit denial overrides exact grant and goal naming retains user policy', { timeout: 30000 }, async t => {
+  for (const naming of ['task', 'off']) {
+    const s = await setup(t, 'denied-grant-' + naming, {}, { mcp: false }, iso => {
+      iso.args.push('--no-approve');
+      mkdirSync(join(iso.dir, '.pi/pstack'), { recursive: true });
+      writeFileSync(join(iso.dir, '.pi/pstack/environment.json'), '{IGNORED_INVALID');
+      writeFileSync(join(iso.agentDir, 'pstack/environment.json'), JSON.stringify({ version: 'pi-mstack/environment/1', naming }));
+      writeFileSync(join(iso.agentDir, 'pstack/environment-grants.json'), JSON.stringify({ version: 'pi-mstack/environment-grants/1', projects: [realpathSync(iso.dir)] }));
+      const agentDir = iso.dir + '-agent'; renameSync(iso.agentDir, agentDir);
+      iso.env.PI_CODING_AGENT_DIR = agentDir;
+      return { agentDir };
+    });
+    await s.client.send('prompt', { message: '/goal GOAL-19 preserve naming' });
+    assert.equal((await s.client.send('get_state')).sessionName, naming === 'task' ? 'GOAL-19' : undefined);
+    await s.client.turn('PLAIN-19 preserve policy');
+    assert.equal((await s.client.send('get_state')).sessionName, naming === 'task' ? 'GOAL-19' : undefined);
+    assert.equal(s.client.records.filter(e => e.method === 'notify' && /Ignored project environment configuration/.test(e.message)).length, 1);
+    assert.ok(!s.client.records.some(e => e.method === 'notify' && /Environment configuration invalid/.test(e.message)));
+    await s.client.stop();
+  }
+});
+
+test('native print mode reports ignored project once on stderr without provider injection', { timeout: 30000 }, t => {
+  const artifact = packed(), dir = join(artifact.dir, 'print-ignored'); mkdirSync(dir);
+  const iso = isolated(dir, artifact.packageRoot);
+  mkdirSync(join(dir, '.pi/pstack'), { recursive: true });
+  writeFileSync(join(dir, '.pi/pstack/environment.json'), '{IGNORED_PRINT');
+  const result = spawnSync(process.execPath, [cli, ...iso.args, '-p', 'PRINT-19 name this task'], { cwd: dir, env: iso.env, encoding: 'utf8', timeout: 20000 });
+  writeFileSync(join(dir, 'evidence.json'), JSON.stringify({ status: result.status, stderr: result.stderr, stdout: result.stdout, requests: captures(iso.env) }, null, 2));
+  t.after(() => { process.stdout.write(`Context native evidence ${dir}\n`); if (!process.env.MSTACK_KEEP_TEST_ARTIFACTS) rmSync(artifact.dir, { recursive: true, force: true }); });
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(result.stderr.split('Ignored project environment configuration').length - 1, 1);
+  assert.match(result.stderr, /environment\.json"/);
+  assert.doesNotMatch(JSON.stringify(captures(iso.env)), /Ignored project environment configuration|IGNORED_PRINT/);
 });

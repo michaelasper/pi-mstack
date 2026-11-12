@@ -52,6 +52,24 @@ For the parent session, add `"defaultTools": ["+pstack_context"]` to settings if
 
 For a custom child tool, include its name in the child's `tools` list and load the extension that registers it through `extensions` or `subagentOnlyExtensions`. If you replace `subagentOnlyExtensions`, retain an absolute path to the installed package's `extensions/pstack/context.ts` when you still want bundled context behavior. A tool name alone does not load its provider. Do not pass `options.tools` or invent a preflight management action.
 
-Pi's built-in MCP supports foreground children with configured `mcp:` selection. An ambient adapter such as `pi-mcp-adapter` requires background execution with `async: true`. Native policy controls availability, trust and permission checks in both cases. Hidden tools remain unavailable. Project MCP and environment files load only when Pi trusts the project.
+Pi's built-in MCP supports foreground children with configured `mcp:` selection. An ambient adapter such as `pi-mcp-adapter` requires background execution with `async: true`. Native policy controls availability, trust and permission checks in both cases. Hidden tools remain unavailable. Project MCP files require native project trust. Project environment files also require an exact user grant.
 
 Keep credentials in Pi's native credential configuration, not `environment.json`. Review the [privacy and limits](../reference/environment.md#retrieval-and-privacy) before authorizing memory files or remote sources.
+
+## Authorize project context
+
+1. Review the project's `.pi/pstack/environment.json` and its memory and MCP sources. A grant permits future content changes at that path.
+2. Run `pwd -P` inside the project to obtain its canonical directory.
+3. Add that exact path to `pstack/environment-grants.json` in your user agent directory, normally `~/.pi/agent`. Keep this file outside the project. Preserve any existing grants.
+
+```json
+{
+	"version": "pi-mstack/environment-grants/1",
+	"projects": ["/absolute/canonical/project"]
+}
+```
+
+4. Allow the project through Pi's native trust controls. A native denial still blocks project environment loading.
+5. Start the next run to load the authorized configuration. To revoke access, remove the path from `projects`. The next run or on-demand retrieval applies the change.
+
+Do not put grants in the checkout. Do not use a parent directory or a glob to authorize several projects. See [project authorization](../reference/environment.md#project-authorization) for limits and revocation behavior.
