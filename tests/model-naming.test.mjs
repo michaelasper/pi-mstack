@@ -4,7 +4,7 @@ import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { SessionManager } from '@earendil-works/pi-coding-agent';
-import { registerNaming, nameSession } from '../extensions/pstack/naming.ts';
+import { registerNaming, nameSession, taskName } from '../extensions/pstack/naming.ts';
 
 const environment = { kind: 'valid', naming: 'model', glossary: [], sources: [] };
 function fixture(t) {
@@ -56,3 +56,16 @@ test('title offers only change their own tool membership and recheck identity an
   await assert.rejects(f.execute(), /no longer eligible/);
   assert.equal(f.manager.getEntries().length, 0);
 });
+
+for (const ticket of ['A-1', 'abc-123', 'AB-0']) {
+  test(`generated titles reject ${ticket} without broadening accepted-input extraction`, async t => {
+    const f = fixture(t);
+    const raw = `${ticket} repair parser`;
+    assert.equal(taskName(raw), raw);
+    f.naming.accept(f.ctx, raw, environment);
+    await assert.rejects(f.execute(`Fix ${ticket} parser bug today`), /without ticket identifiers/);
+    assert.equal(f.manager.getEntries().length, 0);
+    await f.execute();
+    assert.equal(f.manager.getSessionName(), 'Repair parser error recovery');
+  });
+}

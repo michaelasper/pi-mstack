@@ -9,10 +9,10 @@ const version = 'pi-mstack/environment/1';
 const call = title => ({ name: tool, arguments: { title } });
 const declared = request => request.providerTools.some(t => t.name === tool);
 
-async function fixture(t, { child = false, early = false, retry = false, trusted = false, overflow = false } = {}) {
+async function fixture(t, { child = false, early = false, retry = false, trusted = false, overflow = false, settings = {} } = {}) {
   const artifact = packed();
   const dir = join(artifact.dir, 'model-title'); mkdirSync(dir);
-  const iso = isolated(dir, artifact.packageRoot, { defaultProjectTrust: trusted ? 'always' : 'never', compaction: { enabled: overflow, keepRecentTokens: 1 }, retry: { enabled: retry, maxRetries: 1, baseDelayMs: 1 } });
+  const iso = isolated(dir, artifact.packageRoot, { ...settings, defaultProjectTrust: trusted ? 'always' : 'never', compaction: { enabled: overflow, keepRecentTokens: 1 }, retry: { enabled: retry, maxRetries: 1, baseDelayMs: 1 } });
   mkdirSync(join(iso.agentDir, 'pstack'));
   const policy = naming => writeFileSync(join(iso.agentDir, 'pstack/environment.json'), JSON.stringify({ version, naming }));
   policy('model');
@@ -83,7 +83,7 @@ test('packed model title declares actual provider tool, preserves ticket, seals 
 
 test('packed model title repairs invalid calls without consuming the attempt', { timeout: 60000 }, async t => {
   const f = await fixture(t);
-  for (const title of ['', 'Two words', 'one two three four five six seven eight nine', 'Fix\nparser error', 'Fix\u200b parser error', 'Invent XYZ-999 issue title', 'a'.repeat(78) + ' b c']) {
+  for (const title of ['', 'Two words', 'one two three four five six seven eight nine', 'Fix\nparser error', 'Fix\u200b parser error', 'Invent XYZ-999 issue title', 'Fix A-1 parser bug today', 'Fix abc-123 parser bug today', 'Fix AB-0 parser bug today', 'a'.repeat(78) + ' b c']) {
     await f.client.send('new_session');
     f.plan([call(title)]); await f.client.turn('ABC-123 EXECUTE_TEST_PLAN repair task');
     assert.equal(await f.name(), undefined, JSON.stringify(title)); assert.equal((await f.seals()).length, 0);
@@ -191,4 +191,31 @@ test('packed overflow compaction retry preserves an eligible model offer', { tim
   assert.equal(declared(f.requests()[1]), true); assert.equal(declared(f.requests()[2]), true);
   assert.ok((await f.entries()).some(e => e.type === 'compaction'));
   assert.ok(f.client.records.some(e => e.type === 'compaction_end' && e.willRetry));
+});
+
+test('packed steering preserves the active title offer and original ticket', { timeout: 60000 }, async t => {
+  const f = await fixture(t);
+  await f.client.send('prompt', { message: '/test-provider-hold' });
+  const held = f.client.wait(e => e.method === 'notify' && e.message === 'Test provider held');
+  const settled = f.client.wait(e => e.type === 'agent_settled');
+  await f.client.send('prompt', { message: 'ABC-123 EXECUTE_TEST_PLAN repair parser' });
+  await held;
+  assert.equal((await f.client.send('prompt', { message: 'XYZ-9 focus on recovery', streamingBehavior: 'steer' })).disposition, 'queued');
+  await f.client.send('prompt', { message: '/test-provider-release' });
+  await settled;
+  assert.equal(await f.name(), 'ABC-123 Repair parser error recovery');
+  assert.equal((await f.seals()).length, 1);
+  assert.equal(declared(f.requests()[0]), true);
+  assert.equal(declared(f.requests().at(-1)), false);
+  assert.match(JSON.stringify(f.requests().at(-1).messages), /XYZ-9 focus on recovery/);
+});
+
+test('packed settings force activation cannot name without an accepted task', { timeout: 60000 }, async t => {
+  const f = await fixture(t, { settings: { defaultTools: ['+mstack_set_session_title'] } });
+  await f.client.turn('/unknown EXECUTE_TEST_PLAN no accepted task');
+  assert.equal(await f.name(), undefined);
+  assert.equal((await f.seals()).length, 0);
+  assert.equal(declared(f.requests()[0]), false);
+  await f.client.turn('ABC-123 EXECUTE_TEST_PLAN accepted task');
+  assert.equal(await f.name(), 'ABC-123 Repair parser error recovery');
 });

@@ -95,7 +95,7 @@ export default function pstack(pi: ExtensionAPI) {
   // Route prompts through the input pipeline, not a fire-and-forget command
   // handler, so CLI callers await the same run and attachments are preserved.
   pi.on('input', (event, ctx) => {
-    clearName();
+    pendingName = undefined;
     if (event.source === 'extension') return;
     const capture = (raw: string, expected: string) => {
       if (ctx.isIdle() && ownsGoal()) pendingName = { sessionId: ctx.sessionManager.getSessionId(), raw, expected };

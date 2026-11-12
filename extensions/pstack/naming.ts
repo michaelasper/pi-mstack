@@ -50,7 +50,7 @@ export function registerNaming(pi: ExtensionAPI) {
       if (typeof params.title !== 'string' || /[\p{Cc}\p{Cf}]/u.test(params.title)) throw Error('Title must contain text without control or format characters.');
       const title = params.title.trim().replace(/\s+/gu, ' ');
       const words = title ? title.split(' ').length : 0;
-      if (words < 3 || words > 8 || ticketIds(title).length) throw Error('Use 3-8 title words without ticket identifiers.');
+      if (words < 3 || words > 8 || /\b[A-Z][A-Z0-9]*-[0-9]+\b/i.test(title)) throw Error('Use 3-8 title words without ticket identifiers.');
       const name = offer.ticket ? `${offer.ticket} ${title}` : title;
       if ([...name].length > 80) throw Error('Final title including ticket prefix must fit 80 Unicode code points.');
       try {

@@ -3,6 +3,16 @@ import { createAssistantMessageEventStream, getCurrentSystemPrompt, getCurrentTo
 import type { ExtensionAPI } from '@earendil-works/pi-coding-agent';
 
 export default function provider(pi: ExtensionAPI) {
+  let hold: { ready: () => void; released: Promise<void> } | undefined;
+  let release: (() => void) | undefined;
+  pi.registerCommand('test-provider-hold', { handler: async (_args, ctx) => {
+    if (release) throw Error('Provider already held');
+    hold = { ready: () => ctx.ui.notify('Test provider held', 'info'), released: new Promise<void>(resolve => { release = resolve; }) };
+  } });
+  pi.registerCommand('test-provider-release', { handler: async () => {
+    if (!release) throw Error('Provider is not held');
+    release(); release = undefined;
+  } });
   for (const provider of ['mstack-test', 'team/custom', 'https://example.test/v1']) pi.registerProvider(provider, {
     api: 'mstack-scripted', baseUrl: 'http://127.0.0.1:1', apiKey: 'scripted-not-a-credential',
     models: ['script/model', 'other', 'no-reasoning'].map(id => ({ id, name: id, reasoning: id !== 'no-reasoning', input: ['text', 'image'], cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, contextWindow: 200000, maxTokens: 4096 })),
@@ -16,7 +26,7 @@ export default function provider(pi: ExtensionAPI) {
       let calls: Array<{ name: string; arguments: ToolCall['arguments'] }> = [];
       if (last?.role === 'user' && text.includes('EXECUTE_TEST_PLAN') && process.env.MSTACK_PLAN) calls = JSON.parse(readFileSync(process.env.MSTACK_PLAN, 'utf8'));
       if (last?.role === 'user' && text.includes('EXECUTE_CHILD_PLAN') && process.env.MSTACK_CHILD_PLAN) calls = JSON.parse(readFileSync(process.env.MSTACK_CHILD_PLAN, 'utf8'));
-      setTimeout(() => {
+      const finish = () => {
         if (options?.signal?.aborted) {
           message.stopReason = 'aborted'; message.errorMessage = 'aborted';
           stream.push({ type: 'error', reason: 'aborted', error: message }); stream.end(); return;
@@ -47,7 +57,17 @@ export default function provider(pi: ExtensionAPI) {
         }
         stream.push({ type: 'done', reason: message.stopReason === 'toolUse' ? 'toolUse' : 'stop', message });
         stream.end();
-      }, 80);
+      };
+      if (hold) {
+        const barrier = hold; hold = undefined;
+        const aborted = () => { release?.(); release = undefined; };
+        options?.signal?.addEventListener('abort', aborted, { once: true });
+        barrier.ready();
+        void barrier.released.then(() => {
+          options?.signal?.removeEventListener('abort', aborted);
+          finish();
+        });
+      } else setTimeout(finish, 80);
       return stream;
     },
   });

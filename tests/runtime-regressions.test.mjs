@@ -58,13 +58,18 @@ test('busy mode requests refuse without persisting or queuing their tasks', { ti
   await client.send('prompt', { message: '/poteto-mode' });
   const before = await modeEntries(client);
   const settled = client.wait(e => e.type === 'agent_settled');
+  await client.send('prompt', { message: '/test-provider-hold' });
+  const held = client.wait(e => e.method === 'notify' && e.message === 'Test provider held');
   await client.send('prompt', { message: 'BUSY_ON' });
+  await held;
   const startIndex = client.records.length;
   for (const message of ['/skill:poteto-mode off', '/poteto-mode off', '/skill:poteto-mode REFUSED_TASK', '/poteto-mode \nREFUSED_TASK', '/pstack default on']) {
     const response = await client.send('prompt', { message, streamingBehavior: 'followUp' });
     assert.equal(response.disposition, 'handled');
   }
   await client.send('prompt', { message: 'AFTER_REFUSAL', streamingBehavior: 'followUp' });
+  assert.equal(client.records.some(e => e.type === 'agent_settled'), false);
+  await client.send('prompt', { message: '/test-provider-release' });
   await settled;
   assert.deepEqual(await modeEntries(client), before);
   assert.equal(existsSync(join(run.iso.agentDir, 'pstack/models.json')), false);
@@ -84,10 +89,14 @@ test('busy mode requests refuse without persisting or queuing their tasks', { ti
   assert.equal((await modeEntries(client)).at(-1).data.enabled, false);
   const offEntries = await modeEntries(client);
   const offSettled = client.wait(e => e.type === 'agent_settled');
+  await client.send('prompt', { message: '/test-provider-hold' });
+  const offHeld = client.wait(e => e.method === 'notify' && e.message === 'Test provider held');
   await client.send('prompt', { message: 'BUSY_OFF' });
+  await offHeld;
   await client.send('prompt', { message: '/poteto-mode', streamingBehavior: 'followUp' });
   await client.send('prompt', { message: '/skill:poteto-mode REFUSED_ENABLE_TASK', streamingBehavior: 'followUp' });
   await client.send('prompt', { message: 'STILL_OFF', streamingBehavior: 'followUp' });
+  await client.send('prompt', { message: '/test-provider-release' });
   await offSettled;
   assert.deepEqual(await modeEntries(client), offEntries);
   const stillOff = captures(run.iso.env).at(-1);
