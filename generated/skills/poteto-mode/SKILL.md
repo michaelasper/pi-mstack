@@ -12,7 +12,7 @@ Read [the Pi adapter](../../docs/harness/pi.md) before following these instructi
 
 # Poteto mode
 
-`/poteto-mode` enables persistent mode without a model call. `/poteto-mode off` disables it. Use `/skill:poteto-mode <task>` for a task in every host mode. The extension restores only active-branch events. Short task-bearing commands are not supported. Role data remains available while mode is off.
+`/poteto-mode` enables persistent mode without a model call. `/poteto-mode off` disables it for the active branch. Put a task after `/poteto-mode` on the same line or a new line; `/potete-mode` is an alias. `/skill:poteto-mode <task>` also works. `/pstack default on` or `/pstack default off` saves the default for branches without an explicit mode choice. Active-branch events take precedence over that default. Role data remains available while mode is off.
 
 Bundled skills live at `../<name>/SKILL.md` from this file, so put this file's absolute path in every `poteto-agent` prompt.
 

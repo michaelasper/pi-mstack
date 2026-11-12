@@ -55,7 +55,7 @@ Other tools can read the skills, because they use the Agent Skills format. But m
 
 `/poteto-mode` matches the task to a playbook, copies the playbook's steps into the todo list, and runs the other skills as the steps need them. A step it skips stays in the list as `skip: <reason>`. A good prompt states the goal and how to tell it's done. It doesn't list skills, because a hand-written sequence tends to drop or reorder steps the playbook would keep. Read [`references/prompting.md`](references/prompting.md) before you help word one. [Guide page 2](../../../upstream/pstack/docs/guide/02-poteto-mode.md) has examples.
 
-Bare `/poteto-mode` enables branch-local persistent mode without inference. `/poteto-mode off` and `/skill:poteto-mode off` disable it. Use `/skill:poteto-mode <task>` for task-bearing activation. There is no Custom Mode gesture. Short task-bearing commands are unsupported in one-shot modes. Role data applies independently of mode.
+Bare `/poteto-mode` enables branch-local persistent mode without inference. `/poteto-mode off` and `/skill:poteto-mode off` disable it. Add a task on the same line or a new line after `/poteto-mode`; `/potete-mode` is an alias. `/skill:poteto-mode <task>` also works. Save the default with `/pstack default on` or `/pstack default off`; explicit branch choices take precedence. There is no Custom Mode gesture. Role data applies independently of mode.
 
 ## Pick a skill
 

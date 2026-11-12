@@ -4,6 +4,13 @@ Versions use [Semantic Versioning](https://semver.org/). A heading records prepa
 
 ## [Unreleased]
 
+## [0.2.0]
+
+### Added
+
+- Same-line and multiline `/poteto-mode` tasks in TUI, RPC, print, and JSON modes, plus `/potete-mode` as an alias.
+- `/pstack default on|off` to save Poteto Mode's default, with explicit branch choices taking precedence.
+
 ## [0.1.0]
 
 ### Added

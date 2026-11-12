@@ -1,11 +1,11 @@
 # Prepare and publish an npm release
 
-Release preparation is separate from public publication. At preparation time, `npm view pi-mstack` returned 404 and `npm whoami` returned 401. Those historical observations neither reserve the name nor grant publishing permission.
+Release preparation is separate from public publication. The package is published on npm; inspect `npm view pi-mstack version` before choosing the next version. Publishing requires explicit release authorisation and npm account or trusted-publisher access.
 
 ## Prepare a version
 
 1. Start from a clean checkout of `main`. Read the [release policy](../reference/releases.md).
-2. Retain `0.1.0` for the first release. For subsequent releases, update both manifests without creating a tag:
+2. Update both manifests without creating a tag:
 
    ```sh
    npm version patch --no-git-tag-version --ignore-scripts
@@ -64,7 +64,7 @@ If the name is unavailable, stop and decide the naming change explicitly. Do not
 
 In npm package settings, add a GitHub Actions trusted publisher for owner `michaelasper`, repository `pi-mstack`, workflow filename `release.yml`, and environment `npm`.
 
-In GitHub settings, create the `npm` environment with a required reviewer and deployment branches restricted to `main`. Reviewers should check the tag, commit, CI and rehearsal. Naming an environment in YAML does not configure approval rules. Keep dependency updates subject to review.
+The GitHub `npm` environment restricts deployment to protected branches. For an additional human approval gate, configure a required reviewer in environment settings. Check the tag, commit, CI, and rehearsal before approving publication. Naming an environment in YAML alone does not configure approval rules. Keep dependency updates subject to the protected pull-request checks.
 
 The workflow uses GitHub-hosted runners, Node 24 and npm 11.6.2. Only the publication job receives `id-token: write`. No persistent npm token is configured. Consult [npm trusted publishing](https://docs.npmjs.com/trusted-publishers/) for account requirements.
 
