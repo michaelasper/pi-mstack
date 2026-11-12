@@ -55,18 +55,76 @@ function readConfig(path: string, projectRoot?: string): Config {
   return value;
 }
 
-export function loadEnvironment(agentDir: string, cwd: string, trusted: boolean): Environment {
+type EnvironmentRequest = {
+  agentDir: string;
+  cwd: string;
+  nativeTrusted: boolean;
+  sessionId: string;
+  notify: (message: string) => void;
+};
+type ProjectAccess =
+  | { kind: 'allowed'; root: string; file: string }
+  | { kind: 'ignored'; file: string; reason: 'native-denial' | 'missing-grant' | 'invalid-grants' | 'unsafe-path' };
+const grantsSchema = Type.Object({
+  version: Type.Literal('pi-mstack/environment-grants/1'),
+  projects: Type.Array(Type.String({ minLength: 1, maxLength: 4096 }), { maxItems: 256 }),
+}, { additionalProperties: false });
+const warningKey = Symbol.for('pi-mstack/environment-warnings/1');
+const shared = globalThis as typeof globalThis & { [warningKey]?: Set<string> };
+const warned = shared[warningKey] ??= new Set<string>();
+
+function projectAccess({ agentDir, cwd, nativeTrusted }: EnvironmentRequest): ProjectAccess {
+  const file = resolve(cwd, CONFIG_DIR_NAME, 'pstack/environment.json');
+  if (!nativeTrusted) return { kind: 'ignored', file, reason: 'native-denial' };
+  try {
+    const root = realpathSync(cwd);
+    const userRoot = realpathSync(agentDir);
+    const authority = join(userRoot, 'pstack/environment-grants.json');
+    const part = relative(root, authority);
+    if (part !== '..' && !part.startsWith('..' + sep) && !isAbsolute(part)) return { kind: 'ignored', file, reason: 'unsafe-path' };
+    const value: unknown = JSON.parse(readBoundedFile(authority, 65536, userRoot));
+    if (!Value.Check(grantsSchema, value) || value.projects.some(path => !isAbsolute(path) || realpathSync(path) !== path || !statSync(path).isDirectory())) {
+      return { kind: 'ignored', file, reason: 'invalid-grants' };
+    }
+    return value.projects.includes(root)
+      ? { kind: 'allowed', root, file: join(root, CONFIG_DIR_NAME, 'pstack/environment.json') }
+      : { kind: 'ignored', file, reason: 'missing-grant' };
+  } catch { return { kind: 'ignored', file, reason: 'invalid-grants' }; }
+}
+
+function hasProjectConfig(cwd: string): boolean {
+  let cursor = resolve(cwd);
+  for (const component of [CONFIG_DIR_NAME, 'pstack', 'environment.json']) {
+    cursor = join(cursor, component);
+    try {
+      const stat = lstatSync(cursor);
+      if (stat.isSymbolicLink() || !stat.isDirectory()) return true;
+    } catch (error) { return (error as NodeJS.ErrnoException).code !== 'ENOENT'; }
+  }
+  return true;
+}
+
+export function loadEnvironment(request: EnvironmentRequest): Environment {
+  const { agentDir, cwd, sessionId, notify } = request;
+  const access = projectAccess(request);
+  if (access.kind === 'ignored' && hasProjectConfig(cwd)) {
+    const key = JSON.stringify([resolve(agentDir), sessionId, access.file]);
+    if (!warned.has(key)) {
+      warned.add(key);
+      notify(`Ignored project environment configuration ${JSON.stringify(access.file)}. Explicit user authorization and native project trust are required.`);
+    }
+  }
   try {
     const user = readConfig(join(agentDir, 'pstack/environment.json'));
-    const project = trusted ? readConfig(join(cwd, CONFIG_DIR_NAME, 'pstack/environment.json'), cwd) : undefined;
+    const project = access.kind === 'allowed' ? readConfig(access.file, access.root) : undefined;
     const terms = new Map<string, Static<typeof glossary>[number]>();
     for (const entry of [...user.glossary ?? [], ...project?.glossary ?? []]) terms.set(entry.term, entry);
     const entries = [...terms.values()];
     const sources: Source[] = [...(user.sources ?? []).map(s => {
       if (s.kind === 'memory' && !isAbsolute(s.path)) throw Error('User memory requires an absolute path');
       return s;
-    }), ...(project?.sources ?? []).map(s => s.kind === 'memory' ? { ...s, path: resolve(cwd, s.path), projectRoot: cwd } : s)];
+    }), ...(access.kind === 'allowed' ? (project?.sources ?? []).map(s => s.kind === 'memory' ? { ...s, path: resolve(access.root, s.path), projectRoot: access.root } : s) : [])];
     if (entries.length > 32 || Buffer.byteLength(JSON.stringify(entries)) > 8192 || sources.length > 4 || new Set(sources.map(s => s.id)).size !== sources.length) throw Error('Environment limits');
     return { kind: 'valid', naming: user.naming ?? 'task', glossary: entries, sources };
-  } catch { return { kind: 'invalid', diagnostic: 'Environment configuration invalid or unreadable. Naming, glossary and context sources are disabled. Check pstack/environment.json in user and trusted project configuration.' }; }
+  } catch { return { kind: 'invalid', diagnostic: 'Environment configuration invalid or unreadable. Naming, glossary and context sources are disabled. Check pstack/environment.json in user and authorized project configuration.' }; }
 }

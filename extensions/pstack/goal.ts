@@ -32,7 +32,10 @@ export function registerGoal(pi: ExtensionAPI, ownPath: string, report: (ctx: Ex
   const collision = (ctx: ExtensionContext) => report(ctx, 'Command collision goal. Disable the conflicting extension or prompt and reload. Goal and automatic name are unchanged.', true);
   const handle = async (args: string, ctx: ExtensionContext) => {
     if (!ownsGoal()) { collision(ctx); return; }
-    const environment = loadEnvironment(getAgentDir(), ctx.cwd, ctx.isProjectTrusted());
+    const environment = loadEnvironment({ agentDir: getAgentDir(), cwd: ctx.cwd, nativeTrusted: ctx.isProjectTrusted(), sessionId: ctx.sessionManager.getSessionId(), notify: text => {
+      if (ctx.hasUI) ctx.ui.notify(text, 'warning');
+      else process.stderr.write(`pi-mstack: ${text}\n`);
+    } });
     if (environment.kind === 'invalid') report(ctx, environment.diagnostic, true);
     let command: ReturnType<typeof parseGoal>;
     try { command = parseGoal(args); } catch (error) { report(ctx, (error as Error).message, true); return; }

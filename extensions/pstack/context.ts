@@ -48,11 +48,20 @@ export default function context(pi: ExtensionAPI) {
   const reset = () => { lifetime.abort(); lifetime = new AbortController(); automatic = undefined; sessionId = undefined; };
   pi.on('session_shutdown', reset);
   pi.on('session_tree', reset);
-  pi.on('session_start', reset);
+  pi.on('session_start', (_event, ctx) => {
+    reset();
+    loadEnvironment({ agentDir: getAgentDir(), cwd: ctx.cwd, nativeTrusted: ctx.isProjectTrusted(), sessionId: ctx.sessionManager.getSessionId(), notify: text => {
+      if (ctx.hasUI) ctx.ui.notify(text, 'warning');
+      else process.stderr.write(`pi-mstack: ${text}\n`);
+    } });
+  });
   pi.on('before_agent_start', (event, ctx) => {
     reset();
     sessionId = ctx.sessionManager.getSessionId();
-    environment = loadEnvironment(getAgentDir(), ctx.cwd, ctx.isProjectTrusted());
+    environment = loadEnvironment({ agentDir: getAgentDir(), cwd: ctx.cwd, nativeTrusted: ctx.isProjectTrusted(), sessionId: ctx.sessionManager.getSessionId(), notify: text => {
+      if (ctx.hasUI) ctx.ui.notify(text, 'warning');
+      else process.stderr.write(`pi-mstack: ${text}\n`);
+    } });
     delete event.systemPromptOptions.sections['pi-mstack-glossary'];
     if (environment.kind === 'invalid') {
       if (ctx.hasUI) ctx.ui.notify(environment.diagnostic, 'error');
@@ -84,7 +93,10 @@ export default function context(pi: ExtensionAPI) {
     reachesTools: input => environment.kind === 'valid' ? environment.sources.filter(s => s.id === input.source && s.kind === 'mcp').map(s => s.kind === 'mcp' ? s.tool : '') : [],
     async execute(_id, params, signal, _onUpdate, ctx) {
       const current = lifetime;
-      const snapshot = loadEnvironment(getAgentDir(), ctx.cwd, ctx.isProjectTrusted());
+      const snapshot = loadEnvironment({ agentDir: getAgentDir(), cwd: ctx.cwd, nativeTrusted: ctx.isProjectTrusted(), sessionId: ctx.sessionManager.getSessionId(), notify: text => {
+        if (ctx.hasUI) ctx.ui.notify(text, 'warning');
+        else process.stderr.write(`pi-mstack: ${text}\n`);
+      } });
       const source = snapshot.kind === 'valid' ? snapshot.sources.find(s => s.id === params.source) : undefined;
       if (!source || Buffer.byteLength(params.query) > 2048) return { content: [{ type: 'text', text: failure() }], details: {}, isError: true };
       try {
