@@ -162,8 +162,8 @@ test('native trust distinguishes implicit bare-config trust from explicit denial
     const request = captures(s.env).at(-1);
     assert.match(JSON.stringify(request.messages), /USER_MEMORY_SENTINEL/);
     if (mode === 'bare') {
-      assert.match(JSON.stringify(request.messages), /PROJECT_MEMORY_SENTINEL/);
-      assert.match(request.system, /PROJECT_GLOSSARY_SENTINEL/);
+      assert.doesNotMatch(JSON.stringify(request.messages), /PROJECT_MEMORY_SENTINEL/);
+      assert.doesNotMatch(request.system, /PROJECT_GLOSSARY_SENTINEL/);
     } else {
       assert.doesNotMatch(JSON.stringify(request), /PROJECT_MEMORY_SENTINEL|PROJECT_GLOSSARY_SENTINEL/);
       writeFileSync(join(s.dir, '.pi/pstack/environment.json'), '{INVALID_PROJECT');
