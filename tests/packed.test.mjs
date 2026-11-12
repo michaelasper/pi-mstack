@@ -67,15 +67,15 @@ function assertTask(env, packageRoot, task, native) {
   }
 }
 
-test('headless setup and task-bearing short command never infer or write config', () => {
+test('headless setup and bare mode toggles never infer or write config', () => {
   const dir = join(artifact.dir, 'headless'); mkdirSync(dir);
   const iso = isolated(dir, artifact.packageRoot);
-  for (const command of ['/setup-pstack', '/poteto-mode SHORT_TASK']) {
+  for (const command of ['/setup-pstack', '/poteto-mode', '/poteto-mode off']) {
     const result = spawnSync(process.execPath, [cli, ...iso.args, '-p', command], { cwd: dir, env: iso.env, encoding: 'utf8', timeout: 15000 });
     assert.equal(result.status, 0, result.stderr);
     assert.equal(captures(iso.env).length, 0);
     assert.equal(existsSync(join(iso.agentDir, 'pstack/models.json')), false);
-    assert.match(result.stderr, /No changes written|unsupported/);
+    assert.match(result.stderr, /No changes written|Mode enabled|Mode disabled/);
   }
 });
 
@@ -171,12 +171,12 @@ test('real RPC packed mode, roles while off, busy refusal and retry, resume and 
   writeFileSync(competing, 'export default pi => { pi.registerCommand("poteto-mode", { handler: async () => {} }); }');
   const other = rpc({ dir: collisionDir, ...collision, args: [...collision.args, '-e', competing] }); t.after(() => other.stop());
   const listed = (await other.send('get_commands')).commands;
-  const own = listed.find(c => c.source === 'extension' && c.name.startsWith('poteto-mode:') && c.sourceInfo.path.includes('/package/'));
-  assert.ok(own);
-  await other.send('prompt', { message: '/' + own.name });
+  assert.ok(listed.some(c => c.source === 'extension' && c.name === 'poteto-mode' && c.sourceInfo.path === competing));
+  await other.turn('/skill:poteto-mode COLLISION_TASK');
+  assert.doesNotMatch(captures(collision.env).at(-1).system, /<pi-mstack-mode>/);
   assert.equal((await other.send('get_entries')).entries.filter(e => e.customType === 'pi-mstack/mode').length, 0);
   assert.ok(other.records.some(e => JSON.stringify(e).includes('collision')));
-  await other.send('prompt', { message: '/' + own.name + ' off' });
+  await other.turn('/potete-mode off');
   assert.equal((await other.send('get_entries')).entries.filter(e => e.customType === 'pi-mstack/mode').length, 0);
   await other.stop();
 

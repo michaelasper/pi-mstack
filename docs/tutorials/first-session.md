@@ -4,22 +4,19 @@ You will install pi-mstack and switch Poteto Mode on and off in one session. By 
 
 ## Before you start
 
-Use a POSIX shell with Git, npm, Node.js 22.19 or later, and Pi 1.5.0 already installed. The declared minimum Node version has not been separately tested; the recorded full-suite run used Node 26.1.0. This exercise assumes you do not have another pstack port enabled. Resolve any resource collisions using the [installation guide](../how-to/install.md) before continuing.
+Use a POSIX shell with npm, Node.js 22.19 or later, and Pi 1.5.0 already installed. This exercise assumes you do not have another pstack port enabled. Resolve any resource collisions using the [installation guide](../how-to/install.md) before continuing.
 
-## 1. Install the checkout
+## 1. Install from npm
 
-In a directory where you keep projects, run:
+In your terminal, run:
 
 ```sh
-git clone https://github.com/michaelasper/pi-mstack.git
-cd pi-mstack
-npm ci --ignore-scripts
 pi install npm:@trevonistrevon/pi-loop@0.7.19
 pi install npm:pi-subagents@0.86.0
-pi install "$PWD"
+pi install npm:pi-mstack
 ```
 
-The last three commands register packages in Pi's user configuration. The local checkout must remain at this path.
+These commands register the three npm packages in Pi’s user configuration. You do not need a source checkout.
 
 ## 2. Start Pi and inspect the extension
 
@@ -33,7 +30,7 @@ Enter:
 /pstack doctor
 ```
 
-The report includes mode state, role configuration, resource collisions, and observable dependency tools. A fresh session starts with mode off. Missing role configuration inherits the current parent model. An unavailable model is reported as blocked, not silently replaced.
+The report includes mode state, role configuration, resource collisions, and observable dependency tools. With no saved default, a fresh session starts with mode off. Missing role configuration inherits the current parent model. An unavailable model is reported as blocked, not silently replaced.
 
 If a collision is reported, stop here and resolve it before proceeding.
 

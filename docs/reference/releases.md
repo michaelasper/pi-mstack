@@ -4,7 +4,7 @@
 
 `package.json` owns the package version. Root and root-package versions in `package-lock.json` must match. `CHANGELOG.md` requires a matching `## [VERSION]` heading. Tags use exactly `vVERSION`.
 
-The initial prepared version is `0.1.0`. Versions describe the Pi port, not upstream pstack. The upstream commit and adaptation digest are separate identities. Published versions are immutable.
+Versions describe the Pi port, not upstream pstack. The upstream commit and adaptation digest are separate identities. Published versions are immutable.
 
 Before 1.0, compatible fixes use patch increments; incompatible changes use minor increments with migration notes. After 1.0, incompatible changes use major increments. Compatible features use minor increments. Automation currently accepts stable `major.minor.patch` only. Prereleases and additional dist-tags require a separate policy.
 
@@ -40,6 +40,12 @@ Commands accept `--tag vVERSION`; use the npm argument separator when invoking t
 Matrix jobs install the lockfile without lifecycle scripts, check generation and types, run tests, validate metadata, and pack and verify the archive. Artefacts are retained for 14 days. Contract tests use scripted providers and isolated environments, not model credentials. The pinned-source job depends on public GitHub availability.
 
 This matrix is configured coverage, not evidence of successful remote runs. Local checks and Actions results must be reported separately. Windows remains outside the tested contract.
+
+## Repository protections
+
+`main` requires a pull request, an up-to-date branch, resolved conversations, and all nine CI/statechart checks from GitHub Actions. These requirements include administrators. Force pushes and branch deletion are disabled. Required approval count is zero so a sole maintainer can merge after checks pass; an independent approval is not claimed.
+
+Release tags matching `v*` cannot be updated or deleted. Secret scanning and push protection are enabled, along with Dependabot vulnerability alerts and security updates. Actions default to read-only permissions and cannot approve pull requests. The `npm` environment permits deployment only from protected branches; publication still requires explicit workflow dispatch.
 
 ## Publication workflow
 

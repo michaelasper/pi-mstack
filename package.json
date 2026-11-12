@@ -1,12 +1,17 @@
 {
   "name": "pi-mstack",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": false,
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org/"
   },
-  "keywords": ["pi-package", "pi", "pstack", "agent-skills"],
+  "keywords": [
+    "pi-package",
+    "pi",
+    "pstack",
+    "agent-skills"
+  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/michaelasper/pi-mstack.git"
@@ -40,6 +45,9 @@
     ],
     "skills": [
       "./generated/skills"
+    ],
+    "prompts": [
+      "./extensions/pstack/prompts"
     ],
     "subagents": {
       "agents": [
