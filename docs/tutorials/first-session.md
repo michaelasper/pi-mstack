@@ -12,7 +12,7 @@ In your terminal, run:
 
 ```sh
 pi install npm:@trevonistrevon/pi-loop@0.7.19
-pi install npm:pi-subagents@0.86.0
+pi install npm:pi-subagents@0.87.0
 pi install npm:pi-mstack
 ```
 

@@ -7,7 +7,7 @@
 | Node.js | Minimum 22.19.0. CI covers 22.19.0, 24, and 26 on Ubuntu 24.04, plus 26 on macOS 15. |
 | Pi | Tested with 1.5.0. |
 | pi-loop | Tested with `@trevonistrevon/pi-loop` 0.7.19. Scheduling and monitors require an active host. |
-| pi-subagents | Tested with `pi-subagents` 0.86.0. Native preflight controls launch eligibility. |
+| pi-subagents | Tested with `pi-subagents` 0.87.0. Native preflight controls launch eligibility. |
 | Upstream pstack | Version 0.15.36 at commit `2776ddd2355d6d6c8747d3964600f28daf62f049`. |
 | Package distribution | Published npm package (recommended) and public GitHub source. Multiline mode prompts and saved mode defaults require version 0.2.0 or later. Release automation requires explicit dispatch and account setup. |
 
