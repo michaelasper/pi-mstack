@@ -60,7 +60,7 @@ test('busy mode requests refuse without persisting or queuing their tasks', { ti
   const settled = client.wait(e => e.type === 'agent_settled');
   await client.send('prompt', { message: 'BUSY_ON' });
   const startIndex = client.records.length;
-  for (const message of ['/skill:poteto-mode off', '/poteto-mode off', '/skill:poteto-mode REFUSED_TASK', '/poteto-mode \nREFUSED_TASK', '/potete-mode\nREFUSED_TASK', '/pstack default on']) {
+  for (const message of ['/skill:poteto-mode off', '/poteto-mode off', '/skill:poteto-mode REFUSED_TASK', '/poteto-mode \nREFUSED_TASK', '/pstack default on']) {
     const response = await client.send('prompt', { message, streamingBehavior: 'followUp' });
     assert.equal(response.disposition, 'handled');
   }
@@ -69,7 +69,7 @@ test('busy mode requests refuse without persisting or queuing their tasks', { ti
   assert.deepEqual(await modeEntries(client), before);
   assert.equal(existsSync(join(run.iso.agentDir, 'pstack/models.json')), false);
   const notices = client.records.slice(startIndex).filter(e => e.method === 'notify').map(e => e.message);
-  assert.equal(notices.filter(text => /request refused while the agent is busy/.test(text)).length, 6);
+  assert.equal(notices.filter(text => /request refused while the agent is busy/.test(text)).length, 5);
   assert.ok(!notices.some(text => /Mode disabled/.test(text)));
   const requests = captures(run.iso.env);
   assert.equal(requests.length, 2);

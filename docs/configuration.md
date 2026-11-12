@@ -41,7 +41,7 @@ An incompatible preexisting file, including an empty or whitespace-only file, is
 
 ## Commands and mode
 
-Multiline short prompts, the `potete-mode` alias, and saved defaults require version 0.2.0 or later.
+Multiline short prompts and saved defaults require version 0.2.0 or later. The accidental `potete-mode` alias is removed in 0.3.0.
 
 | Route | Effect |
 | --- | --- |
@@ -51,7 +51,6 @@ Multiline short prompts, the `potete-mode` alias, and saved defaults require ver
 | `/skill:poteto-mode off` | Disables mode without consuming another package's conflicting skill. |
 | `/skill:poteto-mode <task>` | Enables mode and uses native skill expansion for the task. |
 | `/poteto-mode <task>` | Enables mode and runs the task through native skill expansion. Spaces, tabs, LF, and CRLF can separate the name and task. |
-| `/potete-mode` | Alias for `/poteto-mode`, including tasks and `off`. |
 | `/pstack default on` / `/pstack default off` | Saves the default for branches without an explicit on/off choice; preserves role settings. |
 | `/pstack default` | Reports the saved default without changing it. |
 | `/setup-pstack` | Opens transactional setup, or reports instructions headlessly. |
@@ -59,8 +58,12 @@ Multiline short prompts, the `potete-mode` alias, and saved defaults require ver
 
 Mode requests and default-setting writes while the agent is busy are refused. No mode entry or default change is persisted and no task is queued. Retry after settlement. Short and native skill routes accept same-line and multiline tasks; the input hook normalizes them before native skill expansion, without forwarding another user message. Extension-origin messages are left untouched and do not activate persistent mode, even when an extension opts into skill expansion.
 
-The extension commands are `setup-pstack` and `pstack`. Mode routes use the input hook, with packaged prompt resources for command completion. Disabling prompt templates hides those completion entries but does not disable the input hook. The diagnostic command also accepts bare `/pstack`. Other skill names use `/skill:name`.
+The extension commands are `setup-pstack`, `pstack`, and `goal`. Mode routes use the input hook, with packaged prompt resources for command completion. Disabling prompt templates hides those completion entries but does not disable the input hook. The diagnostic command also accepts bare `/pstack`. Other skill names use `/skill:name`.
 
 Mode entries use custom type `pi-mstack/mode` with version `1`. The latest explicit mode entry among active-branch ancestors determines the current state; otherwise the saved default applies. Even an explicit off while already off is recorded, so enabling the default later cannot undo it. Default changes affect new sessions and existing branches without explicit entries. Invalid configuration never enables the default or gets overwritten by the toggle. The extension sets separate system-prompt sections for mode and role data. It does not replace the host prompt, launch children, or intercept unrelated delegation.
 
 Doctor reports tool presence or inactivity from public metadata. Dependency versions and resolved agent provenance remain unverified where that metadata is unavailable. Native agent overrides are operator choices. A workflow must inspect native list or get metadata before claiming the bundled definition's restrictions.
+
+## Goals and environment
+
+The separate [goals, naming and context reference](reference/environment.md) defines `/goal` and `pstack/environment.json`. The role-model schema above is unchanged.

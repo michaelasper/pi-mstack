@@ -1,6 +1,6 @@
 {
   "schema": 2,
-  "reviewDigest": "fbbcb09a0a93409944e683d5c48db3942bbd821178d37363d731a1ddd638d51e",
+  "reviewDigest": "15e22181509d3f13ed8bb8fb65a3be35de9905663da605bbfaa92ae0dbd0abe9",
   "inputs": [
     {
       "path": "tools/importer.mjs",
@@ -20,11 +20,11 @@
     },
     {
       "path": "port/mappings.json",
-      "sha256": "44312c79b7cb40c4b6da1c6c37a5766e85f725c73b0b5bad140d255470c00242"
+      "sha256": "7fee12d373b7070168f96065846b6f660e408b21f0213fa6796a80187a58d3d7"
     },
     {
       "path": "port/patches.json",
-      "sha256": "359d6fdf3cf7ad4fed34cb25210a685225d0593f9b141f44bfc652c7fc6d3f05"
+      "sha256": "c4d066d03803f0d81b36b0123b55de7fdb40d4f4277b3ea43916d78adebb6ce6"
     },
     {
       "path": "port/policy.json",
@@ -44,11 +44,11 @@
     },
     {
       "path": "port/templates/comment-sicko.md",
-      "sha256": "ed940329701da494c08a1fe19d70271571b8c958ddf5777d6e45112b5618ab79"
+      "sha256": "430ae27c69e9d88fad721ca4f3c6071fe8119fc7e90f031f3439c742513151ed"
     },
     {
       "path": "port/templates/poteto-agent.md",
-      "sha256": "5629bc4b3d113da122bb19b81d248dc4542096b5f900710d2c2496a0c491b6ad"
+      "sha256": "1add5935a3b4e686048e844057630fbe448cf03815fe839e2769066b6e50be5c"
     },
     {
       "path": "port/templates/setup.md",

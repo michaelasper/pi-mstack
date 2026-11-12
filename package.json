@@ -1,6 +1,6 @@
 {
   "name": "pi-mstack",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "private": false,
   "publishConfig": {
     "access": "public",
@@ -41,7 +41,8 @@
   ],
   "pi": {
     "extensions": [
-      "./extensions/pstack/index.ts"
+      "./extensions/pstack/index.ts",
+      "./extensions/pstack/context.ts"
     ],
     "skills": [
       "./generated/skills"

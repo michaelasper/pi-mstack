@@ -5,6 +5,7 @@ tools: read, grep, find, ls
 model: inherit
 defaultContext: fresh
 inheritSkills: false
+subagentOnlyExtensions: ../../extensions/pstack/context.ts
 ---
 
 

@@ -55,9 +55,13 @@ To enable mode and start a task, put the task on the same line or a new line. Fo
 Fix the parser bug and prove the regression.
 ```
 
-`/potete-mode` is an alias. These routes work in TUI, RPC, print, and JSON modes. If Pi is busy, the request is refused without changing mode or queuing the task; retry after settlement.
+Only the canonical `/poteto-mode` route is owned. The accidental `/potete-mode` alias is removed. These routes work in TUI, RPC, print, and JSON modes. If Pi is busy, the request is refused without changing mode or queuing the task; retry after settlement.
 
 Use `/pstack default on` or `/pstack default off` to save the default; `/pstack default` shows it. Sessions and branches without an explicit choice follow that preference. An explicit `/poteto-mode off` always overrides a default of on.
+
+Use `/goal <text>` to set branch intent without inference, `/goal` to show it, or `/goal --clear` to clear it. The first accepted task or goal names a never-named session locally, preferring a single Jira-style identifier. Existing names and explicit clears are preserved.
+
+Configure terminology, local memory, and native MCP retrieval in the separate `pstack/environment.json`. See [goals, naming and context](docs/reference/environment.md) for the schema and privacy limits, and [configure child context tools](docs/how-to/configure-context.md) for native tool selection. Context never grants authority.
 
 ## Documentation
 

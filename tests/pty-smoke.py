@@ -23,7 +23,7 @@ try:
             if not data:
                 break
             output.extend(data)
-            if b'scripted-complete' in output:
+            if os.environ.get('MSTACK_PTY_EXPECT', 'scripted-complete').encode() in output:
                 passed = True
                 break
 finally:
