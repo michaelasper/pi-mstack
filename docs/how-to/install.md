@@ -1,6 +1,6 @@
 # Install or update the package
 
-This guide installs pi-mstack from its public GitHub checkout. The first npm publication is still pending. Once a version is published and verified, `pi install npm:pi-mstack@VERSION` can replace the checkout installation. See the [release guide](release.md) for registry verification; a prepared changelog entry is not a published version.
+Version 0.1.0 is available with `pi install npm:pi-mstack@0.1.0`. This guide covers installation from the public GitHub checkout, which may contain unreleased changes. Multiline mode prompts and saved defaults require version 0.2.0 or later; they are not included in npm 0.1.0. See the [release guide](release.md) for registry verification.
 
 ## Install
 

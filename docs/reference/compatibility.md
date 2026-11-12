@@ -9,7 +9,7 @@
 | pi-loop | Tested with `@trevonistrevon/pi-loop` 0.7.19. Scheduling and monitors require an active host. |
 | pi-subagents | Tested with `pi-subagents` 0.86.0. Native preflight controls launch eligibility. |
 | Upstream pstack | Version 0.15.36 at commit `2776ddd2355d6d6c8747d3964600f28daf62f049`. |
-| Package distribution | Public GitHub source and npm-ready metadata. The first npm publication remains pending; release automation requires explicit dispatch and account setup. |
+| Package distribution | Public GitHub source and npm 0.1.0. Multiline mode prompts and saved mode defaults require version 0.2.0 or later. Release automation requires explicit dispatch and account setup. |
 
 The contract suite requires Git, tar, Python 3, and a POSIX terminal. The recorded full-suite run was on macOS. Windows and other dependency combinations are unverified.
 

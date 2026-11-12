@@ -13,7 +13,7 @@ If you use Cursor pstack's review and implementation workflows but work in Pi, t
 - Choose exact authenticated models and ordered review panels without Cursor model aliases.
 - See missing capabilities and blocked model choices before relying on them.
 
-This is a public source package, installed from a checkout. The first npm publication is still pending. [Release preparation](docs/how-to/release.md) covers versioning, CI, and explicit publication approval. It does not provide Cursor cloud agents, Benny automation, Bugbot, or a replacement for required product verification.
+Version 0.2.0 adds multiline mode prompts and saved mode defaults. Check the npm registry for publication status; this checkout includes these features. [Release preparation](docs/how-to/release.md) covers versioning, CI, and explicit publication approval. It does not provide Cursor cloud agents, Benny automation, Bugbot, or a replacement for required product verification.
 
 ## Install
 
@@ -40,11 +40,20 @@ In Pi, use these distinct operations.
 
 ## Usage
 
-Bare `/poteto-mode` enables persistent mode without inference. `/poteto-mode off` disables it. Forks inherit only their ancestors' mode entries. A new session starts with mode off.
+Bare `/poteto-mode` enables persistent mode without inference. `/poteto-mode off` disables it for the active branch. Forks inherit only their ancestors' mode entries. New sessions default to off unless you save a different preference.
 
 Use `/skill:how Explain this parser` for a standalone skill. Configured role data remains available with mode off.
 
-Use `/skill:poteto-mode <task>` for tasks in the TUI, RPC, print, and JSON modes. Busy mode requests refuse without changing state or queuing the task. Retry after settlement. The short `/poteto-mode <task>` form is deliberately unsupported. Actual one-shot CLI tests show that command forwarding can start a request without retaining its completed output.
+Put your task after `/poteto-mode` on the same line or a new line:
+
+```text
+/poteto-mode
+Fix the parser bug and prove the regression.
+```
+
+`/potete-mode` is also accepted as an alias. `/skill:poteto-mode <task>` still works. These routes complete in TUI, RPC, print, and JSON modes. Busy mode requests refuse without changing state or queuing the task; retry after settlement.
+
+Save the default with `/pstack default on` or `/pstack default off`. Query it with `/pstack default`. The preference applies to sessions and branches without an explicit mode choice; `/poteto-mode off` always overrides a default of on. Existing branches without an explicit choice also follow the saved default. Preferences are stored alongside role configuration, not in the package installation.
 
 ## Configuration and limits
 

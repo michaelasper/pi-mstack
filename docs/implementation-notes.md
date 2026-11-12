@@ -24,7 +24,7 @@ The ordinary test suite packs and unpacks the standard npm artifact. It proves s
 
 ## Implementation choices
 
-The task-bearing short-command prototype completes in TUI and RPC but loses completed output in print and JSON. The supported task route is therefore `/skill:poteto-mode <task>`. The package refuses short task commands instead of relying on a void forwarding call to keep the host alive.
+The task-bearing short-command forwarding prototype completes in TUI and RPC but loses completed output in print and JSON. Short routes now use an input transform to native `/skill:poteto-mode <task>`, preserving the original run instead of forwarding. Packaged prompt templates provide completion only. The input hook accepts multiline tasks and leaves extension-origin messages unchanged. A saved `potetoModeDefault` supplies the mode only when the active branch has no explicit on/off entry.
 
 Standard npm packaging excludes `.gitignore`. The approved exception stores only that filename as `__npm_reserved_gitignore__`, while the manifest retains its original identity, hash, and mode. Packed export reconstructs the complete original tree. No tarball patcher or replacement packaging workflow exists.
 

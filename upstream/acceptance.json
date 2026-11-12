@@ -1,6 +1,6 @@
 {
   "schema": 2,
-  "reviewDigest": "f38e6aac09a804d3dd4604ea07f6d6b04122b531cc371d7e7dc3d13677bf26f0",
+  "reviewDigest": "fbbcb09a0a93409944e683d5c48db3942bbd821178d37363d731a1ddd638d51e",
   "inputs": [
     {
       "path": "tools/importer.mjs",
@@ -20,11 +20,11 @@
     },
     {
       "path": "port/mappings.json",
-      "sha256": "5e4fa8abf19dedb3479437977323423ed50eeacef7e0a451bac3b32faa7eb26c"
+      "sha256": "44312c79b7cb40c4b6da1c6c37a5766e85f725c73b0b5bad140d255470c00242"
     },
     {
       "path": "port/patches.json",
-      "sha256": "9b58846faf811fc80409ce87c681f50d63dc845562d4f153b9f1167f17e6a696"
+      "sha256": "359d6fdf3cf7ad4fed34cb25210a685225d0593f9b141f44bfc652c7fc6d3f05"
     },
     {
       "path": "port/policy.json",

@@ -15,16 +15,16 @@
   },
   {
     "path": "docs/harness/pi.md",
-    "sha256": "14ba5d5175b70b7ec2db8279b02dc1e3c080649e4d6358d1c35332fed362009c",
+    "sha256": "59a767b880ec2040a791a1cd4807178c6912200abf23fde46d6fc6315fb33557",
     "gitMode": "100644",
-    "sourceHash": "5e4fa8abf19dedb3479437977323423ed50eeacef7e0a451bac3b32faa7eb26c",
+    "sourceHash": "44312c79b7cb40c4b6da1c6c37a5766e85f725c73b0b5bad140d255470c00242",
     "adapterId": "mapping-registry"
   },
   {
     "path": "host-coverage.json",
     "sha256": "567eecc9283a7a927f78d908f8f05f28514b89a0b32cbd0e8089ac71a03e39a5",
     "gitMode": "100644",
-    "sourceHash": "5e4fa8abf19dedb3479437977323423ed50eeacef7e0a451bac3b32faa7eb26c",
+    "sourceHash": "44312c79b7cb40c4b6da1c6c37a5766e85f725c73b0b5bad140d255470c00242",
     "adapterId": "scanner"
   },
   {
@@ -232,7 +232,7 @@
   },
   {
     "path": "skills/poteto-help/SKILL.md",
-    "sha256": "f6afeec407cececf13bb68f295f97c8b04b34ceedc25bef6fce965b57ad9059c",
+    "sha256": "895b76e332fdcdbac35925525074941d7d7903906111ec192ff8fd2a6cc60a10",
     "gitMode": "100644",
     "sourceHash": "768368881379d688c4e3bbdae55dd2d7874fde98a258324d3527de1bf09f9bd1",
     "adapterId": "exact:skills/poteto-help/SKILL.md"
@@ -533,7 +533,7 @@
   },
   {
     "path": "skills/poteto-mode/SKILL.md",
-    "sha256": "62aff50f1993890b207c5a39426ce115b0b603fcd76ec715043b0c163457648a",
+    "sha256": "2611de1a88d8537ed2dd55d7280fa9c95582bc0652c7c3f81d20338d0a8aafd9",
     "gitMode": "100644",
     "sourceHash": "ee1848c973a112026f09ba12ea7a13c1654006e7bf170d1c34bf5d5816bc439b",
     "adapterId": "exact:skills/poteto-mode/SKILL.md"

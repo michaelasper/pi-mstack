@@ -46,7 +46,8 @@ test('native dependencies discover packed agents, retain async child output, and
   assert.equal(discovery.isError, false, JSON.stringify(discovery));
   assert.match(JSON.stringify(discovery), /poteto-agent/);
   assert.match(JSON.stringify(discovery), /comment-sicko/);
-  assert.match(JSON.stringify(discovery), /pi-mstack@0\.1\.0/);
+  const { name, version } = JSON.parse(readFileSync(join(artifact.packageRoot, 'package.json'), 'utf8'));
+  assert.ok(JSON.stringify(discovery).includes(`${name}@${version}`));
   writeFileSync(iso.env.MSTACK_PLAN, JSON.stringify([
     { name: 'subagent', arguments: { agent: 'comment-sicko', task: `NATIVE_CHILD. Skill path ${join(artifact.packageRoot, 'generated/skills/no-comments/SKILL.md')}`, async: true, model: 'mstack-test/script/model:off', output, options: { timeoutMs: 15000, acceptance: { level: 'none', reason: 'scripted API contract test, not prose compliance' } } } },
     { name: 'MonitorCreate', arguments: { command: 'sleep 0.3; printf monitor-retained-output', onDone: 'MONITOR_PROVIDER_WAKE' } },

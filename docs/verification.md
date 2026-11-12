@@ -29,10 +29,10 @@ The suite requires Git, tar, Python 3, a POSIX terminal, and installed developme
 | Standard package | `tests/packed.test.mjs` unpacks the ordinary tarball and runs its shipped offline check. Export reconstructs all original source paths, hashes, and modes, including `.gitignore`. Names, visibility, MIT attribution, and dormant exclusions are checked. |
 | Config and setup | `tests/runtime.test.mjs` and `tests/setup.test.mjs` exercise invalid config, full model IDs, ordered repeated panels, scope diagnostics, unsupported thinking, cancellation, declined confirmation, restrictive file mode, and stale-write refusal. The setup flow runs through actual RPC dialogs. |
 | Mode and role prompts | Packed SDK and RPC tests capture provider-visible prompts with mode on and off, standalone skills, custom wakes, new and resumed sessions, forks, tree navigation, and reload. |
-| Collision refusal | RPC exercises suffixed extension commands and a competing user skill. The foreign skill's `off` argument is not consumed, and no mode event is written. |
+| Collision refusal | RPC exercises a competing extension command and a competing user skill. The foreign skill's `off` argument is not consumed, and no mode event is written. |
 | Native dependencies | `tests/native.test.mjs` correlates an async child run ID with completion delivery and its bound output. A separate `monitor:done` custom wake must reach a later parent provider request. Captures assert role data and mode off on both native wakes. Enabled-mode custom wakes have separate SDK coverage, not enabled-mode native monitor/completion evidence. Cleanup checks require parent and child processes to exit. |
 | Native policy | Native tests observe rejected global scope, strict inheritance, per-agent scope, and thinking-ceiling requests. Explicit parent selection defeats a conflicting native agent model override. `tests/runtime-regressions.test.mjs` also observes trusted project policy replacement despite conflicting user settings. Doctor labels merged settings as observations. |
-| Runtime regressions | Real packed RPC tests preserve literal extension messages, enforce ASCII-space activation grammar, and refuse busy mode changes without persistence or queuing. Empty files and colon-bearing model IDs have targeted regressions. Custom slash and URL provider IDs have real SDK prompt tests for explicit and inherited selections. Unit tests block ambiguous combined IDs without substitution. |
+| Runtime regressions | Real packed RPC tests preserve literal extension messages, leave near-match commands untouched, and refuse busy mode/default changes without persistence or queuing. Empty files and colon-bearing model IDs have targeted regressions. Custom slash and URL provider IDs have real SDK prompt tests for explicit and inherited selections. Unit tests block ambiguous combined IDs without substitution. |
 | Adapter prose | `tests/adapter.test.mjs` checks mandatory gate wording and exact replacement outcomes. These are prose regressions, not model-compliance evaluations. |
 | Statechart | `tests/statechart.test.mjs` runs the upstream offline CLI and recorded-output tests, then runs broken and fixed fixtures through a packed `node_modules` installation, directly and through symlinks in paths containing spaces. These default checks replay TLC output; they do not run Java. |
 
@@ -61,9 +61,11 @@ MSTACK_LIVE_TLC=1 node --test --test-name-pattern='live TLC' tests/statechart.te
 
 The corpus tests compare real TLC results with retained reports and charts. The installed-package check requires the broken MediaPlayer model to exit 1 and the fixed model to exit 0. This establishes model-checking and packaging behavior, not equivalence between an arbitrary model and product code. Renderer validation remains separate.
 
-## Task-forwarding prototype
+## Mode input routing
 
-The prototype uses actual Pi 1.5.0 entry points. Its command calls `sendUserMessage` with a native skill invocation and uses follow-up delivery when busy.
+`tests/mode-input.test.mjs` verifies short and multiline requests (including a space before the newline), the `potete-mode` alias, completion-resource discovery, saved defaults across new sessions and process restart, explicit-off precedence across resume and fork, invalid-config refusal, image attachment preservation, foreign prompt collisions, and completed output in print, JSON, RPC, and a real TUI under a PTY. Role settings survive default changes. Native input transformation keeps the original run's lifetime rather than creating an unawaited forwarded run.
+
+The following older forwarding probe remains as a regression demonstrating why mode routes now use the input hook instead of an extension command. The prototype uses actual Pi 1.5.0 entry points. Its command calls `sendUserMessage` with a native skill invocation and uses follow-up delivery when busy.
 
 | Entry point | Forwarding command | Native `/skill:poteto-mode <task>` |
 | --- | --- | --- |
@@ -73,7 +75,7 @@ The prototype uses actual Pi 1.5.0 entry points. Its command calls `sendUserMess
 | Print | Provider request starts, but completed output is lost. | Completed output observed. |
 | JSON | Provider request starts, but completed output is lost. | Completed output observed. |
 
-The extension therefore supports bare toggle and off commands, but refuses task-bearing short commands. The native skill route is the supported idle route across these modes. Busy activation and toggles refuse explicitly instead of promising changed prompts for already queued work. A void `sendUserMessage` return is not a lifetime guarantee.
+Task-bearing short routes now bypass that prototype: the input hook transforms them to native `/skill:poteto-mode <task>` within the original prompt. Bare mode and off requests remain model-free. Busy activation, toggles, and default writes refuse explicitly. The prototype's void `sendUserMessage` return remains unsuitable as a lifetime guarantee.
 
 ## Adapter acceptance examples
 
