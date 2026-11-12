@@ -1,8 +1,14 @@
+import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { getAgentDir, type ExtensionAPI, type ExtensionContext, type SessionEntry } from '@earendil-works/pi-coding-agent';
+import { getAgentDir, stripFrontmatter, type ExtensionAPI, type ExtensionContext, type SessionEntry } from '@earendil-works/pi-coding-agent';
 import { getSupportedThinkingLevels } from '@earendil-works/pi-ai';
 import { configPath, loadConfig, modelChoices, parseConfig, policyStatus, roleData, roles, saveConfig } from './config.ts';
+
+import { sameFile } from './resources.ts';
+import { registerGoal } from './goal.ts';
+import { nameSession } from './naming.ts';
+import { loadEnvironment } from './environment-config.ts';
 
 export const modeType = 'pi-mstack/mode';
 function branchMode(entries: readonly SessionEntry[]): boolean | undefined {
@@ -18,6 +24,7 @@ export function enabledOnBranch(entries: readonly SessionEntry[], defaultEnabled
   return branchMode(entries) ?? defaultEnabled;
 }
 export default function pstack(pi: ExtensionAPI) {
+  if (process.env.PI_SUBAGENT_CHILD === '1') return;
   const ownPath = fileURLToPath(import.meta.url);
   const root = resolve(dirname(ownPath), '../..');
   const path = configPath(getAgentDir());
@@ -26,6 +33,18 @@ export default function pstack(pi: ExtensionAPI) {
     if (ctx.hasUI) ctx.ui.notify(text, error ? 'error' : 'info');
     else process.stderr.write(`pi-mstack: ${text}\n`);
   };
+  const ownsGoal = registerGoal(pi, ownPath, report);
+  let pendingName: { sessionId: string; raw: string; expected: string } | undefined;
+  const clearName = () => { pendingName = undefined; };
+  pi.on('session_shutdown', clearName);
+  pi.on('session_tree', clearName);
+  pi.on('before_agent_start', (event, ctx) => {
+    const pending = pendingName;
+    clearName();
+    if (pending && ownsGoal() && event.messageType === 'user' && pending.sessionId === ctx.sessionManager.getSessionId() && event.prompt === pending.expected) {
+      nameSession(pi, ctx, pending.raw, loadEnvironment(getAgentDir(), ctx.cwd, ctx.isProjectTrusted()));
+    }
+  });
   const defaultMode = () => {
     const state = loadConfig(path);
     return state.kind === 'valid' && state.config.potetoModeDefault === true;
@@ -35,16 +54,16 @@ export default function pstack(pi: ExtensionAPI) {
     const commands = pi.getCommands(), problems: string[] = [];
     for (const name of ['setup-pstack', 'pstack']) {
       const matches = commands.filter(c => c.source === 'extension' && (c.name === name || c.name.startsWith(name + ':')));
-      if (matches.length !== 1 || matches[0].name !== name || resolve(matches[0].sourceInfo.path) !== ownPath) problems.push(`Command collision ${name}: ${JSON.stringify(matches.map(c => ({ name: c.name, sourceInfo: c.sourceInfo })))}`);
+      if (matches.length !== 1 || matches[0].name !== name || !sameFile(matches[0].sourceInfo.path, ownPath)) problems.push(`Command collision ${name}: ${JSON.stringify(matches.map(c => ({ name: c.name, sourceInfo: c.sourceInfo })))}`);
     }
-    for (const name of ['poteto-mode', 'potete-mode']) {
+    for (const name of ['poteto-mode']) {
       const promptPath = resolve(root, 'extensions/pstack/prompts', name + '.md');
-      const foreign = commands.filter(c => (c.name === name || c.name.startsWith(name + ':')) && (c.source !== 'prompt' || resolve(c.sourceInfo.path) !== promptPath));
+      const foreign = commands.filter(c => (c.name === name || c.name.startsWith(name + ':')) && (c.source !== 'prompt' || !sameFile(c.sourceInfo.path, promptPath)));
       if (foreign.length) problems.push(`Command collision ${name}: ${JSON.stringify(foreign.map(c => c.sourceInfo))}`);
     }
     for (const name of ['poteto-mode', 'setup-pstack']) {
       const matches = commands.filter(c => c.name === `skill:${name}`);
-      if (matches.length !== 1 || matches[0].source !== 'skill' || resolve(matches[0].sourceInfo.path) !== skillPath(name)) problems.push(`Skill collision or missing ${name}: ${JSON.stringify(matches.map(c => c.sourceInfo))}`);
+      if (matches.length !== 1 || matches[0].source !== 'skill' || !sameFile(matches[0].sourceInfo.path, skillPath(name))) problems.push(`Skill collision or missing ${name}: ${JSON.stringify(matches.map(c => c.sourceInfo))}`);
     }
     return problems;
   }
@@ -70,9 +89,16 @@ export default function pstack(pi: ExtensionAPI) {
   // Route prompts through the input pipeline, not a fire-and-forget command
   // handler, so CLI callers await the same run and attachments are preserved.
   pi.on('input', (event, ctx) => {
+    clearName();
     if (event.source === 'extension') return;
-    const match = event.text.match(/^\/(?:skill:poteto-mode|poteto-mode|potete-mode)(?:[ \t\r\n]+([\s\S]*))?$/);
-    if (!match || match[0] !== event.text) return;
+    const capture = (raw: string, expected: string) => {
+      if (ctx.isIdle() && ownsGoal()) pendingName = { sessionId: ctx.sessionManager.getSessionId(), raw, expected };
+    };
+    const match = event.text.match(/^\/(?:skill:poteto-mode|poteto-mode)(?:[ \t\r\n]+([\s\S]*))?$/);
+    if (!match || match[0] !== event.text) {
+      if (event.text.trim() && !event.text.trimStart().startsWith('/')) capture(event.text, event.text);
+      return;
+    }
     if (!ownsResources(ctx)) return { action: 'continue' };
     const task = match[1]?.trim() ?? '';
     if (!setMode(ctx, task !== 'off')) return { action: 'handled' };
@@ -80,6 +106,11 @@ export default function pstack(pi: ExtensionAPI) {
       report(ctx, task === 'off' ? 'Poteto Mode disabled.' : 'Poteto Mode enabled.');
       return { action: 'handled' };
     }
+    const path = pi.getCommands().find(c => c.name === 'skill:poteto-mode')!.sourceInfo.path;
+    try {
+      const body = stripFrontmatter(readFileSync(path, 'utf8')).trim();
+      capture(task, `<skill name="poteto-mode" location="${path}">\nReferences are relative to ${dirname(path)}.\n\n${body}\n</skill>\n\n${task}`);
+    } catch { clearName(); }
     return { action: 'transform', text: `/skill:poteto-mode ${task}` };
   });
   pi.on('session_start', (_event, ctx) => {

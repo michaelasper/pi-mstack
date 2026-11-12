@@ -1,0 +1,72 @@
+import { closeSync, constants, fstatSync, lstatSync, openSync, readSync, realpathSync, statSync } from 'node:fs';
+import { isAbsolute, join, relative, resolve, sep } from 'node:path';
+import { CONFIG_DIR_NAME } from '@earendil-works/pi-coding-agent';
+import { Type, type Static } from 'typebox';
+import { Value } from 'typebox/value';
+
+const text = Type.String({ minLength: 1, maxLength: 8192, pattern: '^[^\\x00-\\x08\\x0b-\\x1f\\x7f]*$' });
+const id = Type.String({ pattern: '^[A-Za-z][A-Za-z0-9_-]{0,63}$' });
+const glossary = Type.Array(Type.Object({ term: text, meaning: text, availability: Type.Union([Type.Literal('available'), Type.Literal('conditional'), Type.Literal('unavailable')]) }, { additionalProperties: false }), { maxItems: 32 });
+const source = Type.Union([
+  Type.Object({ id, kind: Type.Literal('memory'), path: text, delivery: Type.Union([Type.Literal('automatic'), Type.Literal('on-demand')]) }, { additionalProperties: false }),
+  Type.Object({ id, kind: Type.Literal('mcp'), tool: Type.String({ maxLength: 256, pattern: '^mcp__[A-Za-z0-9_]+__[A-Za-z0-9_]+$' }), queryArgument: Type.String({ pattern: '^[A-Za-z][A-Za-z0-9_]{0,63}$' }) }, { additionalProperties: false }),
+]);
+const schema = Type.Object({ version: Type.Literal('pi-mstack/environment/1'), naming: Type.Optional(Type.Union([Type.Literal('task'), Type.Literal('off')])), glossary: Type.Optional(glossary), sources: Type.Optional(Type.Array(source, { maxItems: 4 })) }, { additionalProperties: false });
+type Config = Static<typeof schema>;
+export type Source = Static<typeof source> & { projectRoot?: string };
+export type Environment = { kind: 'valid'; naming: 'task' | 'off'; glossary: Static<typeof glossary>; sources: Source[] } | { kind: 'invalid'; diagnostic: string };
+
+export function readBoundedFile(path: string, limit: number, projectRoot?: string): string {
+  const canonical = realpathSync(path);
+  if (projectRoot) {
+    const root = realpathSync(projectRoot), part = relative(root, canonical);
+    if (part === '..' || part.startsWith('..' + sep) || isAbsolute(part)) throw Error('Outside project');
+    const lexical = relative(resolve(projectRoot), resolve(path));
+    if (lexical === '..' || lexical.startsWith('..' + sep) || isAbsolute(lexical)) throw Error('Outside project');
+    let cursor = root;
+    for (const component of lexical.split(sep)) {
+      cursor = join(cursor, component);
+      if (lstatSync(cursor).isSymbolicLink()) throw Error('Symlink');
+    }
+  }
+  const fd = openSync(path, constants.O_RDONLY | constants.O_NONBLOCK | constants.O_NOFOLLOW);
+  try {
+    const stat = fstatSync(fd), current = statSync(canonical);
+    if (!stat.isFile() || stat.size > limit || stat.dev !== current.dev || stat.ino !== current.ino || realpathSync(path) !== canonical) throw Error('Unsafe file');
+    const bytes = Buffer.alloc(limit + 1);
+    let length = 0, count = 0;
+    do { count = readSync(fd, bytes, length, bytes.length - length, null); length += count; } while (count && length < bytes.length);
+    if (length > limit) throw Error('Oversized file');
+    return bytes.subarray(0, length).toString('utf8');
+  } finally { closeSync(fd); }
+}
+
+function readConfig(path: string, projectRoot?: string): Config {
+  let raw: string;
+  try { raw = readBoundedFile(path, 65536, projectRoot); }
+  catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+      try { lstatSync(path); } catch (missing) { if ((missing as NodeJS.ErrnoException).code === 'ENOENT') return { version: 'pi-mstack/environment/1' }; }
+    }
+    throw Error('Unreadable configuration');
+  }
+  const value: unknown = JSON.parse(raw);
+  if (!Value.Check(schema, value) || (projectRoot && value.naming !== undefined)) throw Error('Invalid configuration');
+  return value;
+}
+
+export function loadEnvironment(agentDir: string, cwd: string, trusted: boolean): Environment {
+  try {
+    const user = readConfig(join(agentDir, 'pstack/environment.json'));
+    const project = trusted ? readConfig(join(cwd, CONFIG_DIR_NAME, 'pstack/environment.json'), cwd) : undefined;
+    const terms = new Map<string, Static<typeof glossary>[number]>();
+    for (const entry of [...user.glossary ?? [], ...project?.glossary ?? []]) terms.set(entry.term, entry);
+    const entries = [...terms.values()];
+    const sources: Source[] = [...(user.sources ?? []).map(s => {
+      if (s.kind === 'memory' && !isAbsolute(s.path)) throw Error('User memory requires an absolute path');
+      return s;
+    }), ...(project?.sources ?? []).map(s => s.kind === 'memory' ? { ...s, path: resolve(cwd, s.path), projectRoot: cwd } : s)];
+    if (entries.length > 32 || Buffer.byteLength(JSON.stringify(entries)) > 8192 || sources.length > 4 || new Set(sources.map(s => s.id)).size !== sources.length) throw Error('Environment limits');
+    return { kind: 'valid', naming: user.naming ?? 'task', glossary: entries, sources };
+  } catch { return { kind: 'invalid', diagnostic: 'Environment configuration invalid or unreadable. Naming, glossary and context sources are disabled. Check pstack/environment.json in user and trusted project configuration.' }; }
+}

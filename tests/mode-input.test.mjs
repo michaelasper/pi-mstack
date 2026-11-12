@@ -6,8 +6,8 @@ import { spawnSync } from 'node:child_process';
 import { packed, isolated, captures, rpc, cli } from './helpers.mjs';
 
 const artifact = packed();
-after(() => rmSync(artifact.dir, { recursive: true, force: true }));
-const routes = ['/poteto-mode\n', '/poteto-mode \n', '/potete-mode\n', '/poteto-mode ', '/skill:poteto-mode\n'];
+after(() => { if (process.env.MSTACK_KEEP_TEST_ARTIFACTS) process.stdout.write(`Mode and PTY evidence ${artifact.dir}\n`); else rmSync(artifact.dir, { recursive: true, force: true }); });
+const routes = ['/poteto-mode\n', '/poteto-mode \n', '/poteto-mode ', '/skill:poteto-mode\n'];
 const prompt = 'MULTILINE_TASK\nKeep "quotes", $variables, and /slashes unchanged.';
 
 for (const mode of ['print', 'json']) {
@@ -41,7 +41,7 @@ test('RPC multiline input and saved default preserve explicit branch overrides a
   writeFileSync(configPath, JSON.stringify({ version: 'pi-mstack/1', roles }));
   const client = rpc({ dir, ...iso }); t.after(() => client.stop());
   const commands = (await client.send('get_commands')).commands;
-  for (const name of ['poteto-mode', 'potete-mode']) assert.ok(commands.some(c => c.name === name && c.source === 'prompt'));
+  for (const name of ['poteto-mode']) assert.ok(commands.some(c => c.name === name && c.source === 'prompt'));
   // An explicit off must persist even if mode was already off.
   await client.send('prompt', { message: '/poteto-mode off' });
   await client.send('prompt', { message: '/pstack default on' });
@@ -88,7 +88,7 @@ test('RPC multiline input and saved default preserve explicit branch overrides a
   assert.ok(restarted.records.some(e => e.method === 'notify' && /Refusing to overwrite/.test(e.message)));
 });
 
-test('foreign alias prompt blocks default mode without consuming its contents', { timeout: 30000 }, async t => {
+test('removed alias is foreign and does not collide with canonical mode', { timeout: 30000 }, async t => {
   const dir = join(artifact.dir, 'prompt-collision'); mkdirSync(dir);
   const iso = isolated(dir, artifact.packageRoot);
   iso.args = iso.args.filter(arg => arg !== '--no-prompt-templates');
@@ -100,9 +100,10 @@ test('foreign alias prompt blocks default mode without consuming its contents', 
   await client.turn('/potete-mode off');
   const request = captures(iso.env).at(-1);
   assert.match(request.messages.at(-1).content[0].text, /FOREIGN_ALIAS off/);
-  assert.doesNotMatch(request.system, /<pi-mstack-mode>/);
+  assert.match(request.system, /<pi-mstack-mode>/);
   assert.equal((await client.send('get_entries')).entries.filter(e => e.customType === 'pi-mstack/mode').length, 0);
-  assert.ok(client.records.some(e => e.method === 'notify' && /collision/.test(e.message)));
+  assert.ok(!client.records.some(e => e.method === 'notify' && /collision/.test(e.message)));
+  assert.ok(!(await client.send('get_commands')).commands.some(c => c.name === 'potete-mode' && c.sourceInfo.path.includes(artifact.packageRoot)));
 });
 
 test('TUI multiline short prompt completes under a PTY', { timeout: 30000 }, () => {
@@ -113,4 +114,21 @@ test('TUI multiline short prompt completes under a PTY', { timeout: 30000 }, () 
   assert.equal(JSON.parse(r.stdout).completedOutput, true);
   assert.equal(captures(iso.env).length, 1);
   assert.match(captures(iso.env)[0].system, /<pi-mstack-mode>/);
+});
+
+test('packed PTY goal is inference-free, naming uses raw tasks and removed alias is not owned', { timeout: 60000 }, () => {
+  for (const [name, input, expected] of [['goal', '/goal PTY-41 intent', 'Native metadata-only persistence'], ['name', 'Implement PTY-42 locally', 'scripted-complete'], ['removed', '/potete-mode PTY-43', 'scripted-complete']]) {
+    const dir = join(artifact.dir, `pty-${name}`); mkdirSync(dir);
+    const iso = isolated(dir, artifact.packageRoot); iso.env.MSTACK_PTY_EXPECT = expected;
+    const r = spawnSync('python3', [join(artifact.packageRoot, 'tests/pty-smoke.py'), process.execPath, cli, ...iso.args, input], { cwd: dir, env: iso.env, encoding: 'utf8', timeout: 20000 });
+    writeFileSync(join(dir, 'pty-output.json'), r.stdout);
+    assert.equal(r.status, 0, r.stdout + r.stderr);
+    assert.equal(JSON.parse(r.stdout).processExited, true);
+    assert.equal(captures(iso.env).length, name === 'goal' ? 0 : 1);
+    if (name === 'removed') {
+      assert.doesNotMatch(captures(iso.env)[0].system, /<pi-mstack-mode>/);
+      assert.match(JSON.stringify(captures(iso.env)[0].messages), /potete-mode PTY-43/);
+    }
+    if (name === 'name') assert.match(JSON.parse(r.stdout).terminalOutput, /PTY-42/);
+  }
 });

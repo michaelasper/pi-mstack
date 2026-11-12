@@ -1,6 +1,6 @@
 # Verification reference
 
-The contract suite uses a local scripted provider with no network implementation. CLI child environments replace the ambient environment and use isolated home, agent, session, and dependency-state directories. SDK tests use explicit local auth and model files. Native child tests load only the scripted provider and required native supervision extensions.
+The contract suite uses a local scripted provider with no network implementation. CLI child environments replace the ambient environment and use isolated home, agent, session, and dependency-state directories. SDK tests use explicit local auth and model files. Native child tests explicitly load the scripted provider, bundled context and required native supervision extensions. Context integration tests also load a nonce tool and a local stdio MCP fixture.
 
 These tests establish host API behaviour. They do not establish that arbitrary models obey every prose instruction.
 
@@ -63,7 +63,7 @@ The corpus tests compare real TLC results with retained reports and charts. The 
 
 ## Mode input routing
 
-`tests/mode-input.test.mjs` verifies short and multiline requests (including a space before the newline), the `potete-mode` alias, completion-resource discovery, saved defaults across new sessions and process restart, explicit-off precedence across resume and fork, invalid-config refusal, image attachment preservation, foreign prompt collisions, and completed output in print, JSON, RPC, and a real TUI under a PTY. Role settings survive default changes. Native input transformation keeps the original run's lifetime rather than creating an unawaited forwarded run.
+`tests/mode-input.test.mjs` verifies short and multiline requests (including a space before the newline), removal of the `potete-mode` alias, completion-resource discovery, saved defaults across new sessions and process restart, explicit-off precedence across resume and fork, invalid-config refusal, image attachment preservation, foreign prompt collisions, and completed output in print, JSON, RPC, and a real TUI under a PTY. Role settings survive default changes. Native input transformation keeps the original run's lifetime rather than creating an unawaited forwarded run.
 
 The following older forwarding probe remains as a regression demonstrating why mode routes now use the input hook instead of an extension command. The prototype uses actual Pi 1.5.0 entry points. Its command calls `sendUserMessage` with a native skill invocation and uses follow-up delivery when busy.
 
@@ -104,3 +104,24 @@ Packed prose regressions scan active skill Markdown for surviving Cursor authori
 The session acquisition command is verified against installed Pi 1.5.0 documentation and source. `docs/environment-variables.md` defines `PI_SESSION_FILE` for LLM-callable shell tools, not user-entered `!` commands. `docs/extensions.md` documents the opt-out and `sessionManager.getBranch()`. `dist/core/tools/bash.js` clears inherited session variables and injects the current session file only when a session context provides one. `docs/session-format.md` defines the header and branch entries. These paths are relative to `node_modules/@earendil-works/pi-coding-agent`.
 
 The adapter test executes the documented `printf` and header-read commands through the installed Pi shell definition with a retained SessionManager. It also checks ephemeral sessions and disabled environment exposure. This proves that acquisition API contract, not arbitrary overridden or remote shell behavior. When the variable is absent, the workflow requires an exact authorized path and never scans private session directories. No `/session` path-discovery assumption is needed.
+
+## Goals and context execution
+
+`tests/goal-native.test.mjs` runs packed SDK goal ancestry, compaction, reload, idempotence, busy refusal, naming and authentication-rejection checks. RPC checks command provenance, suffixed collisions, foreign prompts and noncolliding skills. `tests/mode-input.test.mjs` includes real PTY goal, naming and removed-alias cases.
+
+`tests/context-native.test.mjs` invokes a real local stdio MCP server and a custom tool inside native children. Nonces agree between server logs, tool results and provider requests. It checks relative extension loading, duplicate suppression, unchanged default allowlists, foreground and background context, and missing-provider, missing-tool, hidden-tool and declined-trust failures. It also distinguishes sanitized wrapper errors and bounded output from raw native events and `nestedCalls` metadata. The fixture contains a synthetic secret-like sentinel, not a credential.
+
+Retain those records with:
+
+```sh
+MSTACK_KEEP_TEST_ARTIFACTS=1 node --test tests/context-native.test.mjs tests/goal-native.test.mjs tests/mode-input.test.mjs
+```
+
+`tests/context.test.mjs` separately checks an uncooperative provider deadline and branch invalidation. `tests/environment.test.mjs` checks scoped merging, size bounds and file containment. These tests do not establish protection against hostile local processes with the same filesystem permissions.
+
+The dependency tree pins Pi 1.5.0. To rerun subprocess RPC, PTY and native-child checks against an already installed compatible host without changing dependencies, set `MSTACK_PI_CLI` to that host's absolute `dist/bundle/cli.js`. The helper also directs native children to that host package. SDK imports and TypeScript checks still use the pinned dependency tree.
+
+```sh
+MSTACK_PI_CLI=/absolute/path/to/pi-coding-agent/dist/bundle/cli.js MSTACK_KEEP_TEST_ARTIFACTS=1 node --test tests/context-native.test.mjs tests/mode-input.test.mjs
+MSTACK_PI_CLI=/absolute/path/to/pi-coding-agent/dist/bundle/cli.js node --test --test-name-pattern='packed RPC' tests/goal-native.test.mjs
+```

@@ -1,23 +1,24 @@
 import { execFileSync, spawn } from 'node:child_process';
 import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
 import assert from 'node:assert/strict';
 
-export const cli = resolve('node_modules/@earendil-works/pi-coding-agent/dist/bundle/cli.js');
+export const cli = resolve(process.env.MSTACK_PI_CLI ?? 'node_modules/@earendil-works/pi-coding-agent/dist/bundle/cli.js');
 export function packed() {
   const dir = mkdtempSync(join(tmpdir(), 'mstack-packed-'));
   const result = JSON.parse(execFileSync('npm', ['pack', '--json', '--ignore-scripts', '--pack-destination', dir], { encoding: 'utf8' }));
   execFileSync('tar', ['-xzf', join(dir, (Array.isArray(result) ? result[0] : result['pi-mstack']).filename), '-C', dir]);
   return { dir, packageRoot: join(dir, 'package') };
 }
-export function isolated(dir, packageRoot, extra = {}) {
+export function isolated(dir, packageRoot, extra = {}, { mcp = false } = {}) {
   const agentDir = join(dir, 'agent');
   mkdirSync(agentDir, { recursive: true });
   const settings = { packages: [packageRoot], defaultProvider: 'mstack-test', defaultModel: 'script/model', defaultThinkingLevel: 'off', cacheWarming: 'off', compaction: { enabled: false }, retry: { enabled: false }, defaultProjectTrust: 'never', enableInstallTelemetry: false, ...extra };
   writeFileSync(join(agentDir, 'settings.json'), JSON.stringify(settings));
   const env = { PATH: process.env.PATH, HOME: dir, TMPDIR: tmpdir(), PI_CODING_AGENT_DIR: agentDir, PI_OFFLINE: '1', MSTACK_CAPTURE: join(dir, 'capture.jsonl'), NO_COLOR: '1', TERM: 'xterm-256color' };
-  const args = ['--offline', '--no-context-files', '--no-prompt-templates', '--no-themes', '--no-mcp', '-e', join(packageRoot, 'tests/fixtures/provider.ts'), '--model', 'mstack-test/script/model:off'];
+  if (process.env.MSTACK_PI_CLI) env.PI_SUBAGENTS_PI_CODING_AGENT_PACKAGE_ROOT = resolve(dirname(cli), '../..');
+  const args = ['--offline', '--no-context-files', '--no-prompt-templates', '--no-themes', ...(mcp ? [] : ['--no-mcp']), '-e', join(packageRoot, 'tests/fixtures/provider.ts'), '--model', 'mstack-test/script/model:off'];
   return { agentDir, settings, env, args };
 }
 export function captures(env) {

@@ -4,6 +4,26 @@ Versions use [Semantic Versioning](https://semver.org/). A heading records prepa
 
 ## [Unreleased]
 
+## [0.3.0]
+
+### Added
+
+- `/goal` to inspect, set, and clear branch intent without starting model work.
+- One-time session names from accepted task text or Jira identifiers, with manual names and clears preserved.
+- Versioned environment configuration for local terminology, automatic memory context, and on-demand MCP retrieval.
+- Explicit context-extension loading in bundled children, with native tools and MCP configuration retaining control of access.
+
+### Changed
+
+- Remove the accidental `/potete-mode` alias. Use `/poteto-mode` or `/skill:poteto-mode` instead.
+- Resolve resource ownership through canonical paths on supported Pi hosts.
+
+### Limits
+
+- Fresh metadata-only goals follow native session persistence and remain memory-only until a conversation is saved.
+- Custom environment files alone do not trigger Pi project trust. Native trusted status does not prove explicit human approval.
+- Retrieval output limits do not redact native tool events, nested-call metadata, or provider records.
+
 ## [0.2.1]
 
 ### Changed

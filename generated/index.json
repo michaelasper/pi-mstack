@@ -1,30 +1,30 @@
 [
   {
     "path": "agents/comment-sicko.md",
-    "sha256": "8ee9b3a9893867790426c59b0ba36542553603c6ceee276cff9144fe4e23dcf2",
+    "sha256": "a4d93159106f6451bdb0cf6723ceed50dbb73b031d354465c1c9cdb8a573df67",
     "gitMode": "100644",
     "sourceHash": "3e239e40b7b4b9beb2cf7f3ccc57f2388eb8b69bd1ba8ae888ef87ef6e0e2116",
     "adapterId": "exact:agents/comment-sicko.md"
   },
   {
     "path": "agents/poteto-agent.md",
-    "sha256": "f9eec4e72916a2342dbd0b0bc0686c85598da9577a9c7cd9a2cf3ee2713da194",
+    "sha256": "ec45e117d48fcb260c7c5cab7317e023aaca7b6964bd36d20d8d90971be17563",
     "gitMode": "100644",
     "sourceHash": "979f18abd000d185a0b4c41a2a4111c0910596a7f5c81cbb571885bc721b2bf7",
     "adapterId": "exact:agents/poteto-agent.md"
   },
   {
     "path": "docs/harness/pi.md",
-    "sha256": "59a767b880ec2040a791a1cd4807178c6912200abf23fde46d6fc6315fb33557",
+    "sha256": "ab5ea9092a603374b7ebbe6e2a229e7aac749668340873ab1a0d9e84834daa60",
     "gitMode": "100644",
-    "sourceHash": "44312c79b7cb40c4b6da1c6c37a5766e85f725c73b0b5bad140d255470c00242",
+    "sourceHash": "7fee12d373b7070168f96065846b6f660e408b21f0213fa6796a80187a58d3d7",
     "adapterId": "mapping-registry"
   },
   {
     "path": "host-coverage.json",
     "sha256": "567eecc9283a7a927f78d908f8f05f28514b89a0b32cbd0e8089ac71a03e39a5",
     "gitMode": "100644",
-    "sourceHash": "44312c79b7cb40c4b6da1c6c37a5766e85f725c73b0b5bad140d255470c00242",
+    "sourceHash": "7fee12d373b7070168f96065846b6f660e408b21f0213fa6796a80187a58d3d7",
     "adapterId": "scanner"
   },
   {
@@ -232,7 +232,7 @@
   },
   {
     "path": "skills/poteto-help/SKILL.md",
-    "sha256": "895b76e332fdcdbac35925525074941d7d7903906111ec192ff8fd2a6cc60a10",
+    "sha256": "c3f764465a9dc9d4adc76f3922802779cb6ba356d602e15ad32a904688e94c53",
     "gitMode": "100644",
     "sourceHash": "768368881379d688c4e3bbdae55dd2d7874fde98a258324d3527de1bf09f9bd1",
     "adapterId": "exact:skills/poteto-help/SKILL.md"
@@ -533,7 +533,7 @@
   },
   {
     "path": "skills/poteto-mode/SKILL.md",
-    "sha256": "2611de1a88d8537ed2dd55d7280fa9c95582bc0652c7c3f81d20338d0a8aafd9",
+    "sha256": "6d51c30b9810f393a407496da0644fa357f6f22c3981e52b5e7ae4581ebfc437",
     "gitMode": "100644",
     "sourceHash": "ee1848c973a112026f09ba12ea7a13c1654006e7bf170d1c34bf5d5816bc439b",
     "adapterId": "exact:skills/poteto-mode/SKILL.md"

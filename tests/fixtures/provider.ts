@@ -11,10 +11,11 @@ export default function provider(pi: ExtensionAPI) {
       const log = process.env.MSTACK_CAPTURE;
       if (log) appendFileSync(log, JSON.stringify({ pid: process.pid, model: model.id, tools: pi.getActiveTools(), system: getCurrentSystemPrompt(context.messages), messages: context.messages }) + '\n');
       const message: AssistantMessage = { role: 'assistant', provider: model.provider, api: model.api, model: model.id, timestamp: Date.now(), content: [], stopReason: 'stop', usage: { input: 1, output: 1, cacheRead: 0, cacheWrite: 0, totalTokens: 2, cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 } } };
-      const last = context.messages.at(-1);
+      const last = context.messages.filter(m => !(m.role === 'user' && JSON.stringify(m).includes('Context source '))).at(-1);
       const text = JSON.stringify(last) ?? "";
       let calls: Array<{ name: string; arguments: ToolCall['arguments'] }> = [];
       if (last?.role === 'user' && text.includes('EXECUTE_TEST_PLAN') && process.env.MSTACK_PLAN) calls = JSON.parse(readFileSync(process.env.MSTACK_PLAN, 'utf8'));
+      if (last?.role === 'user' && text.includes('EXECUTE_CHILD_PLAN') && process.env.MSTACK_CHILD_PLAN) calls = JSON.parse(readFileSync(process.env.MSTACK_CHILD_PLAN, 'utf8'));
       setTimeout(() => {
         if (options?.signal?.aborted) {
           message.stopReason = 'aborted'; message.errorMessage = 'aborted';
@@ -31,7 +32,8 @@ export default function provider(pi: ExtensionAPI) {
             stream.push({ type: 'toolcall_end', contentIndex: index, toolCall: block, partial: message });
           }
         } else {
-          const output = text.includes('NATIVE_CHILD') ? 'native-child-retained' : 'scripted-complete';
+          const childPlan = context.messages.some(m => m.role === 'user' && JSON.stringify(m).includes('EXECUTE_CHILD_PLAN'));
+          const output = childPlan && last?.role === 'toolResult' ? JSON.stringify(context.messages.filter(m => m.role === 'toolResult').map(m => m.content)) : text.includes('NATIVE_CHILD') ? 'native-child-retained' : 'scripted-complete';
           message.content.push({ type: 'text', text: output });
           stream.push({ type: 'text_start', contentIndex: 0, partial: message });
           stream.push({ type: 'text_delta', contentIndex: 0, delta: output, partial: message });
