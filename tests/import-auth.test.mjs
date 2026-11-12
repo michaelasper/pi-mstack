@@ -65,8 +65,11 @@ for (const boundary of ['preview', 'save']) for (const inherited of [false, true
   assert.ok(notices.some(text => /Import blocked|preview changed or became invalid/.test(text)), notices.join('\n'));
   if (boundary === 'save' && inherited) {
     currentGate = gate();
+    // AbortSignal.timeout is unref'ed, and the gated provider owns no live I/O.
+    const keepAlive = setInterval(() => {}, 1000);
+    t.after(() => clearInterval(keepAlive));
     try { await assert.rejects(freshImportAvailability({ version: 'pi-mstack/1', roles: {} }, ctx), /Fresh authentication check failed.*Configuration unchanged.*Retry/); }
-    finally { currentGate.resolve(); }
+    finally { clearInterval(keepAlive); currentGate.resolve(); }
   }
 });
 
