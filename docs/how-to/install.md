@@ -1,23 +1,45 @@
 # Install or update the package
 
-Version 0.1.0 is available with `pi install npm:pi-mstack@0.1.0`. This guide covers installation from the public GitHub checkout, which may contain unreleased changes. Multiline mode prompts and saved defaults require version 0.2.0 or later; they are not included in npm 0.1.0. See the [release guide](release.md) for registry verification.
+Use the npm package for normal use. Use a checkout only when contributing or testing unreleased changes.
 
-## Install
+## Install from npm
 
-Prerequisites are Git, npm, Node.js 22.19 or later, and Pi 1.5.0. See [compatibility](../reference/compatibility.md) for the tested versions and platform limits.
+Prerequisites are npm, Node.js 22.19 or later, and Pi 1.5.0. See [compatibility](../reference/compatibility.md) for tested versions and platform limits.
+
+```sh
+pi install npm:@trevonistrevon/pi-loop@0.7.19
+pi install npm:pi-subagents@0.86.0
+pi install npm:pi-mstack
+```
+
+Start a new Pi session, then run `/pstack doctor`. These commands register packages in your personal Pi configuration. Use `pi list` to inspect the installed sources.
+
+For a reproducible installation, check `npm view pi-mstack version` and install an explicit published version, for example `pi install npm:pi-mstack@0.2.0`. Multiline mode prompts and saved defaults require 0.2.0 or later.
+
+If another pstack package is enabled, disable or remove that competing package through Pi's package configuration first. Do not remove unrelated packages. A resource collision blocks this port's mode activation rather than choosing a winner silently.
+
+## Update an npm installation
+
+Finish active work, then run:
+
+```sh
+pi update --extensions
+```
+
+This reconciles configured extension packages, not just pi-mstack. Exact version pins stay pinned. To change a pin, use `pi install npm:pi-mstack@VERSION` with the intended published version. Restart Pi and run `/pstack doctor`.
+
+## Install from a checkout
+
+Install the two execution extensions shown above, then use Git and npm:
 
 ```sh
 git clone https://github.com/michaelasper/pi-mstack.git
 cd pi-mstack
 npm ci --ignore-scripts
-pi install npm:@trevonistrevon/pi-loop@0.7.19
-pi install npm:pi-subagents@0.86.0
 pi install "$PWD"
 ```
 
-Keep the checkout in place. Pi loads this local package from its registered path. Start a new Pi session, then run `/pstack doctor`.
-
-If another pstack package is enabled, disable or remove that competing package through Pi's package configuration first. Do not remove unrelated packages. A resource collision blocks this port's mode activation rather than choosing a winner silently.
+Keep the checkout at this path; Pi loads it directly. If switching from npm, use `pi list` and remove only the old pi-mstack source with `pi remove <source>` before loading the checkout. Do not load both copies.
 
 ## Update an existing checkout
 
