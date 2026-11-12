@@ -11,10 +11,10 @@ const source = Type.Union([
   Type.Object({ id, kind: Type.Literal('memory'), path: text, delivery: Type.Union([Type.Literal('automatic'), Type.Literal('on-demand')]) }, { additionalProperties: false }),
   Type.Object({ id, kind: Type.Literal('mcp'), tool: Type.String({ maxLength: 256, pattern: '^mcp__[A-Za-z0-9_]+__[A-Za-z0-9_]+$' }), queryArgument: Type.String({ pattern: '^[A-Za-z][A-Za-z0-9_]{0,63}$' }) }, { additionalProperties: false }),
 ]);
-const schema = Type.Object({ version: Type.Literal('pi-mstack/environment/1'), naming: Type.Optional(Type.Union([Type.Literal('task'), Type.Literal('off')])), glossary: Type.Optional(glossary), sources: Type.Optional(Type.Array(source, { maxItems: 4 })) }, { additionalProperties: false });
+const schema = Type.Object({ version: Type.Literal('pi-mstack/environment/1'), naming: Type.Optional(Type.Union([Type.Literal('task'), Type.Literal('model'), Type.Literal('off')])), glossary: Type.Optional(glossary), sources: Type.Optional(Type.Array(source, { maxItems: 4 })) }, { additionalProperties: false });
 type Config = Static<typeof schema>;
 export type Source = Static<typeof source> & { projectRoot?: string };
-export type Environment = { kind: 'valid'; naming: 'task' | 'off'; glossary: Static<typeof glossary>; sources: Source[] } | { kind: 'invalid'; diagnostic: string };
+export type Environment = { kind: 'valid'; naming: NonNullable<Config['naming']>; glossary: Static<typeof glossary>; sources: Source[] } | { kind: 'invalid'; diagnostic: string };
 
 export function readBoundedFile(path: string, limit: number, projectRoot?: string): string {
   const canonical = realpathSync(path);

@@ -1,5 +1,5 @@
-import { appendFileSync, readFileSync } from 'node:fs';
-import { createAssistantMessageEventStream, getCurrentSystemPrompt, type AssistantMessage, type ToolCall } from '@earendil-works/pi-ai';
+import { appendFileSync, readFileSync, existsSync, writeFileSync } from 'node:fs';
+import { createAssistantMessageEventStream, getCurrentSystemPrompt, getCurrentTools, type AssistantMessage, type ToolCall } from '@earendil-works/pi-ai';
 import type { ExtensionAPI } from '@earendil-works/pi-coding-agent';
 
 export default function provider(pi: ExtensionAPI) {
@@ -9,7 +9,7 @@ export default function provider(pi: ExtensionAPI) {
     streamSimple(model, context, options) {
       const stream = createAssistantMessageEventStream();
       const log = process.env.MSTACK_CAPTURE;
-      if (log) appendFileSync(log, JSON.stringify({ pid: process.pid, model: model.id, tools: pi.getActiveTools(), system: getCurrentSystemPrompt(context.messages), messages: context.messages }) + '\n');
+      if (log) appendFileSync(log, JSON.stringify({ pid: process.pid, model: model.id, tools: pi.getActiveTools(), providerTools: getCurrentTools(context.messages), system: getCurrentSystemPrompt(context.messages), messages: context.messages }) + '\n');
       const message: AssistantMessage = { role: 'assistant', provider: model.provider, api: model.api, model: model.id, timestamp: Date.now(), content: [], stopReason: 'stop', usage: { input: 1, output: 1, cacheRead: 0, cacheWrite: 0, totalTokens: 2, cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 } } };
       const last = context.messages.filter(m => !(m.role === 'user' && JSON.stringify(m).includes('Context source '))).at(-1);
       const text = JSON.stringify(last) ?? "";
@@ -20,6 +20,12 @@ export default function provider(pi: ExtensionAPI) {
         if (options?.signal?.aborted) {
           message.stopReason = 'aborted'; message.errorMessage = 'aborted';
           stream.push({ type: 'error', reason: 'aborted', error: message }); stream.end(); return;
+        }
+        const failure = process.env.MSTACK_FAIL_ONCE;
+        if (failure && !existsSync(failure)) {
+          writeFileSync(failure, 'failed once');
+          message.stopReason = 'error'; message.errorMessage = process.env.MSTACK_FAIL_ONCE_ERROR ?? '429 rate limit test';
+          stream.push({ type: 'error', reason: 'error', error: message }); stream.end(); return;
         }
         stream.push({ type: 'start', partial: message });
         if (calls.length) {

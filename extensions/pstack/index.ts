@@ -7,7 +7,7 @@ import { configPath, loadConfig, modelChoices, parseConfig, policyStatus, roleDa
 
 import { sameFile } from './resources.ts';
 import { registerGoal } from './goal.ts';
-import { nameSession } from './naming.ts';
+import { registerNaming } from './naming.ts';
 import { loadEnvironment } from './environment-config.ts';
 
 export const modeType = 'pi-mstack/mode';
@@ -34,15 +34,18 @@ export default function pstack(pi: ExtensionAPI) {
     else process.stderr.write(`pi-mstack: ${text}\n`);
   };
   const ownsGoal = registerGoal(pi, ownPath, report);
+  const naming = registerNaming(pi);
   let pendingName: { sessionId: string; raw: string; expected: string } | undefined;
-  const clearName = () => { pendingName = undefined; };
+  const clearName = () => { pendingName = undefined; naming.clear(); };
+  pi.on('session_start', clearName);
+  pi.on('agent_settled', clearName);
   pi.on('session_shutdown', clearName);
   pi.on('session_tree', clearName);
   pi.on('before_agent_start', (event, ctx) => {
     const pending = pendingName;
     clearName();
     if (pending && ownsGoal() && event.messageType === 'user' && pending.sessionId === ctx.sessionManager.getSessionId() && event.prompt === pending.expected) {
-      nameSession(pi, ctx, pending.raw, loadEnvironment({ agentDir: getAgentDir(), cwd: ctx.cwd, nativeTrusted: ctx.isProjectTrusted(), sessionId: ctx.sessionManager.getSessionId(), notify: text => {
+      naming.accept(ctx, pending.raw, loadEnvironment({ agentDir: getAgentDir(), cwd: ctx.cwd, nativeTrusted: ctx.isProjectTrusted(), sessionId: ctx.sessionManager.getSessionId(), notify: text => {
         if (ctx.hasUI) ctx.ui.notify(text, 'warning');
         else process.stderr.write(`pi-mstack: ${text}\n`);
       } }));

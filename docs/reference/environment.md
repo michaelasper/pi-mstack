@@ -18,6 +18,12 @@ Task text is captured as delivered to mstack's input handler, before skill expan
 
 The versioned `pi-mstack/naming-attempt` entry is written before the native name. Any prior attempt or native `session_info`, on any branch, seals automatic naming. Explicit names and clears are preserved. An interrupted attempt is not retried.
 
+The user-only `model` policy offers `mstack_set_session_title` to the current model after an eligible accepted task. The tool starts inactive and is model-only. Its instruction asks for one call after the task is clear. It accepts 3-8 whitespace-separated words without ticket identifiers, controls, or format characters. The extension prefixes one distinct uppercase ticket from the accepted input. Multiple distinct tickets produce no prefix. The final title, including its prefix, must fit 80 Unicode code points. Invalid titles leave the attempt available for repair.
+
+Model naming rechecks policy, session identity, cancellation, and naming history at execution. The attempt starts immediately before the native name write, not when the tool is offered. A failed write keeps the seal. Offers expire when the run settles or on navigation, reload, or session replacement. Retry and compaction recovery within the same run preserve the offer. A fork inherits only its copied history, so a fork before the seal can name its new session.
+
+Under `model`, `/goal` still makes no model request and does not name the session. No dedicated naming inference or tracker lookup runs. An ordinary tool continuation can make another provider request to continue task work. The model may decline to call the tool, leaving the session unnamed.
+
 ## Environment configuration
 
 `PI_CODING_AGENT_DIR/pstack/environment.json` is the user file. The default agent directory is `~/.pi/agent`. An explicitly authorized, natively trusted project can provide `.pi/pstack/environment.json`. The project directory name follows Pi's exported `CONFIG_DIR_NAME` in rebranded hosts. This file does not change `pstack/models.json` or Pi's model catalogue.
@@ -36,7 +42,7 @@ The versioned `pi-mstack/naming-attempt` entry is written before the native name
 }
 ```
 
-The user file accepts `naming` as `task` or `off`. Project files cannot change naming policy. Missing files mean task naming, no glossary, and no sources. Invalid user or authorized project configuration disables environment features and reports a diagnostic. Configuration is read again at each run and goal command. On-demand retrieval also revalidates it.
+The user file accepts `naming` as `task`, `model`, or `off`. Project files cannot change naming policy. Missing files mean task naming, no glossary, and no sources. Invalid user or authorized project configuration disables environment features and reports a diagnostic. Configuration is read again at each run and goal command. On-demand retrieval also revalidates it.
 
 Glossary entries have `term`, `meaning`, and `availability`, which is `available`, `conditional` or `unavailable`. Exact case-sensitive project terms replace user values in place. New project terms follow user terms. One owned prompt section renders the definitions. The extension does not rewrite skill words or equate services.
 
