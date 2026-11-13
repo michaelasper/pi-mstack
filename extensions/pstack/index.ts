@@ -12,6 +12,7 @@ import { registerGoal } from './goal.ts';
 import { registerGrounding } from './grounding.ts';
 import { registerNaming } from './naming.ts';
 import { loadEnvironment } from './environment-config.ts';
+import { operationStatus } from './context-roles.ts';
 
 export const modeType = 'pi-mstack/mode';
 function branchMode(entries: readonly SessionEntry[]): boolean | undefined {
@@ -163,7 +164,12 @@ export default function pstack(pi: ExtensionAPI) {
         const tool = tools.find(t => t.name === name);
         return `${name}: ${tool ? active.has(name) ? 'present' : 'inactive' : 'absent'}${tool ? ' ' + JSON.stringify(tool.sourceInfo) : ''}`;
       });
-      report(ctx, [`Mode ${isEnabled(ctx) ? 'on' : 'off'}; default ${defaultMode() ? 'on' : 'off'}.`, ...collisions(), ...capabilities, groundingStatus(), 'Dependency versions and resolved native agent provenance unverified. Inspect native subagent list/get metadata before claiming bundled restrictions.', `Configuration ${path}`, roleData(loadConfig(path), ctx), policyStatus(pi.getSettings(), ctx.isProjectTrusted(), roleData(loadConfig(path), ctx))].join('\n'));
+      const environment = loadEnvironment({ agentDir: getAgentDir(), cwd: ctx.cwd, nativeTrusted: ctx.isProjectTrusted(), sessionId: ctx.sessionManager.getSessionId(), notify: text => report(ctx, text, true) });
+      const operations = environment.kind === 'invalid' ? [environment.diagnostic] : Object.entries(environment.roles ?? {}).flatMap(([role, entries]) => Object.entries(entries).map(([name, operation]) => {
+        const tool = tools.find(tool => tool.name === operation.target.tool);
+        return `Context ${role}/${name}: ${operation.effect}; ${operation.target.tool}; ${operationStatus(operation.target.tool, tools, active)}; ${operation.target.selector ? 'selector configured, identity unverified' : 'not grant-ready, no selector'}${operation.effect === 'write' && tool?.sourceInfo?.path !== 'builtin:mcp' ? '; unsupported write adapter' : ''}`;
+      }));
+      report(ctx, [`Mode ${isEnabled(ctx) ? 'on' : 'off'}; default ${defaultMode() ? 'on' : 'off'}.`, ...collisions(), ...capabilities, groundingStatus(), ...operations, 'Context availability is a passive snapshot, not authentication or future permission. Legacy sources are unclassified and are not approved explorer grants.', 'Dependency versions and resolved native agent provenance unverified. Inspect native subagent list/get metadata before claiming bundled restrictions.', `Configuration ${path}`, roleData(loadConfig(path), ctx), policyStatus(pi.getSettings(), ctx.isProjectTrusted(), roleData(loadConfig(path), ctx))].join('\n'));
     },
   });
   pi.registerCommand('setup-pstack', {

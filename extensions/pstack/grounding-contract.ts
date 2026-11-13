@@ -18,7 +18,6 @@ export const evidenceSchema = {
   ],
 };
 
-// This exact source runs in the native sandbox and in contract tests.
 export const gateSource = String.raw`
 function bytes(s) {
   let n = 0;
