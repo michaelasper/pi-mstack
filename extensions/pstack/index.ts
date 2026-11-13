@@ -7,6 +7,7 @@ import { configPath, loadConfig, modelChoices, parseConfig, policyStatus, roleDa
 
 import { sameFile } from './resources.ts';
 import { registerGoal } from './goal.ts';
+import { registerGrounding } from './grounding.ts';
 import { nameSession } from './naming.ts';
 import { loadEnvironment } from './environment-config.ts';
 
@@ -34,6 +35,7 @@ export default function pstack(pi: ExtensionAPI) {
     else process.stderr.write(`pi-mstack: ${text}\n`);
   };
   const ownsGoal = registerGoal(pi, ownPath, report);
+  const groundingStatus = registerGrounding(pi, path, report);
   let pendingName: { sessionId: string; raw: string; expected: string } | undefined;
   const clearName = () => { pendingName = undefined; };
   pi.on('session_shutdown', clearName);
@@ -156,7 +158,7 @@ export default function pstack(pi: ExtensionAPI) {
         const tool = tools.find(t => t.name === name);
         return `${name}: ${tool ? active.has(name) ? 'present' : 'inactive' : 'absent'}${tool ? ' ' + JSON.stringify(tool.sourceInfo) : ''}`;
       });
-      report(ctx, [`Mode ${isEnabled(ctx) ? 'on' : 'off'}; default ${defaultMode() ? 'on' : 'off'}.`, ...collisions(), ...capabilities, 'Dependency versions and resolved native agent provenance unverified. Inspect native subagent list/get metadata before claiming bundled restrictions.', `Configuration ${path}`, roleData(loadConfig(path), ctx), policyStatus(pi.getSettings(), ctx.isProjectTrusted(), roleData(loadConfig(path), ctx))].join('\n'));
+      report(ctx, [`Mode ${isEnabled(ctx) ? 'on' : 'off'}; default ${defaultMode() ? 'on' : 'off'}.`, ...collisions(), ...capabilities, groundingStatus(), 'Dependency versions and resolved native agent provenance unverified. Inspect native subagent list/get metadata before claiming bundled restrictions.', `Configuration ${path}`, roleData(loadConfig(path), ctx), policyStatus(pi.getSettings(), ctx.isProjectTrusted(), roleData(loadConfig(path), ctx))].join('\n'));
     },
   });
   pi.registerCommand('setup-pstack', {

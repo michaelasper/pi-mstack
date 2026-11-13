@@ -14,6 +14,20 @@
     "adapterId": "exact:agents/poteto-agent.md"
   },
   {
+    "path": "agents/pstack-explainer.md",
+    "sha256": "3238da4c6e1ce4ff3a15b6c6461fa9da460ebecdbb9a6b79883e8a8c17248694",
+    "gitMode": "100644",
+    "sourceHash": "3238da4c6e1ce4ff3a15b6c6461fa9da460ebecdbb9a6b79883e8a8c17248694",
+    "adapterId": "local-grounding-agent"
+  },
+  {
+    "path": "agents/pstack-explorer.md",
+    "sha256": "385e2bffecd2f1134bb173a8695730fa6199967b6fa88bdde8460bbdd99757a2",
+    "gitMode": "100644",
+    "sourceHash": "385e2bffecd2f1134bb173a8695730fa6199967b6fa88bdde8460bbdd99757a2",
+    "adapterId": "local-grounding-agent"
+  },
+  {
     "path": "docs/harness/pi.md",
     "sha256": "ab5ea9092a603374b7ebbe6e2a229e7aac749668340873ab1a0d9e84834daa60",
     "gitMode": "100644",

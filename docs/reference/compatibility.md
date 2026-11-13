@@ -5,7 +5,7 @@
 | Component | Contract |
 | --- | --- |
 | Node.js | Minimum 22.19.0. CI covers 22.19.0, 24, and 26 on Ubuntu 24.04, plus 26 on macOS 15. |
-| Pi | Pinned SDK and full suite on 1.5.0. Additional goal, naming, mode, PTY, context and native-child subprocess checks on installed 1.5.2. SDK 1.5.2 is not covered. |
+| Pi | Pinned SDK and full suite on 1.5.0. Additional goal, naming, mode, PTY, context and native-child subprocess checks on installed 1.5.2. The independent grounding matrix also covers both actual CLI and child SDK roots on 1.5.2. Other SDK 1.5.2 checks are not covered. |
 | pi-loop | Tested with `@trevonistrevon/pi-loop` 0.7.19. Scheduling and monitors require an active host. |
 | pi-subagents | Tested with `pi-subagents` 0.87.0. Native preflight controls launch eligibility. |
 | Upstream pstack | Version 0.15.36 at commit `2776ddd2355d6d6c8747d3964600f28daf62f049`. |
@@ -23,6 +23,7 @@ The manifest accounts for all 573 pinned upstream source records. The generated 
 | Branch goals and deterministic names | Packed SDK, RPC and PTY coverage. Naming uses local parsing, not Jira or model calls. |
 | Glossary, local memory and MCP retrieval | Bundled context extension with native dispatch. See [privacy limits](environment.md#retrieval-and-privacy). |
 | Exact role models and ordered panels | Implemented; availability and native policy remain separate checks. |
+| Repository grounding | Named resource with native acceptance and bounded sourced reports. See [limits and overrides](grounding.md). |
 | Native child execution and retained output | Delegated to pi-subagents and exercised by contract tests. |
 | Scheduling and monitor wakes | Delegated to pi-loop and exercised with mode off; enabled-mode custom wakes have separate SDK coverage. |
 | Skill authoring | Pi-native instructions and discoverable destinations. Prose regressions do not establish arbitrary-model authoring quality. |
