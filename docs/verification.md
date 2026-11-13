@@ -17,6 +17,8 @@ The optional `MSTACK_GIT_TESTS=1 npm test` check also inventories the pinned com
 
 The suite requires Git, tar, Python 3, a POSIX terminal, and installed development dependencies. It uses standard `npm pack --ignore-scripts` without changing tarball contents.
 
+`tests/local-agents-native.test.mjs` packs the package, installs the tarball with an explicit Pi and pi-ai version, and asserts the installed pi-subagents version. It covers packaged list and get provenance, the public preflight contract, exact provider tool declarations, a real explorer read with failed write, edit, and bash attempts, worker write, edit, and bash results, foreground and background dispatch, a file-backed workflow, valid, missing, and schema-bound acceptance reports, project, global, and skills context sentinels, explicit fork and fresh context, operator widening, narrowing, inheritance and project precedence, rejected `options.tools`, an unrelated ambient extension, and unchanged grounding agent bytes. The test does not establish filesystem isolation, MCP enforcement, or model prose compliance.
+
 ## CLI and SDK attribution
 
 `node scripts/attribution.mjs --output attribution.json` records separate CLI and SDK identity observations. Without `--output`, the script prints JSON to stdout and writes no manifest file. Run it from the repository root.
@@ -70,7 +72,7 @@ MSTACK_KEEP_TEST_ARTIFACTS=1 node --test tests/plan-native.test.mjs tests/idle-c
 
 `tests/grounding.test.mjs` exercises the exact gate source embedded in the workflow. It rejects missing native evidence, reused results, failed checks, mismatched saved references, unsupported policies, and invalid domain reports. It also checks UTF-8 limits and requested versus actual attribution.
 
-`tests/grounding-native.test.mjs` packs the current package and installs it independently with the requested actual Pi version and pi-subagents 0.87.0. Each case records RPC events, provider captures, native status, saved reports, and unchanged settings hashes. The suite covers a held two-explorer barrier, evidence-only, refusal, blocked and schema-invalid reports, missing and malformed acceptance reports, owner policies, explicit launch rejection, abort, and concurrent invocations. Owner verified policy retains its harmless native verification command but blocks unsupported synthesis. Synthetic citations do not claim source inspection.
+`tests/grounding-native.test.mjs` packs the current package and installs it independently with the requested actual Pi version and pi-subagents 0.88.1. Each case records RPC events, provider captures, native status, saved reports, and unchanged settings hashes. The suite covers a held two-explorer barrier, evidence-only, refusal, blocked and schema-invalid reports, missing and malformed acceptance reports, owner policies, explicit launch rejection, abort, and concurrent invocations. Owner verified policy retains its harmless native verification command but blocks unsupported synthesis. Synthetic citations do not claim source inspection.
 
 Run both versions with fresh evidence destinations.
 

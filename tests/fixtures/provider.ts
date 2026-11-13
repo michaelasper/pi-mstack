@@ -42,9 +42,14 @@ export default function provider(pi: ExtensionAPI) {
       const summary = context.messages.some(m => m.role === 'system' && JSON.stringify(m).includes('context summarization assistant'));
       const last = context.messages.filter(m => !(m.role === 'user' && (JSON.stringify(m).includes('Context source ') || JSON.stringify(m).includes('Saved pstack plan for this branch')))).at(-1);
       const text = JSON.stringify(last) ?? "";
+      const agentName = () => /<active_agent name="([^"]+)"\/>/.exec(getCurrentSystemPrompt(context.messages) ?? '')?.[1] ?? /AGENT:([a-z0-9-]+)/.exec(JSON.stringify(context.messages))?.[1];
       let calls: Array<{ name: string; arguments: ToolCall['arguments'] }> = [];
       if (!summary && last?.role === 'user' && text.includes('EXECUTE_TEST_PLAN') && process.env.MSTACK_PLAN) calls = JSON.parse(readFileSync(process.env.MSTACK_PLAN, 'utf8'));
-      if (!summary && last?.role === 'user' && text.includes('EXECUTE_CHILD_PLAN') && process.env.MSTACK_CHILD_PLAN) calls = JSON.parse(readFileSync(process.env.MSTACK_CHILD_PLAN, 'utf8'));
+      if (!summary && last?.role === 'user' && text.includes('EXECUTE_CHILD_PLAN') && process.env.MSTACK_CHILD_PLAN) {
+        const planDir = process.env.MSTACK_CHILD_PLAN_DIR, name = agentName();
+        const planFile = planDir && name && existsSync(`${planDir}/${name}.json`) ? `${planDir}/${name}.json` : process.env.MSTACK_CHILD_PLAN;
+        calls = JSON.parse(readFileSync(planFile, 'utf8'));
+      }
       let held = false;
       if (!summary && last?.role === 'user' && process.env.MSTACK_GROUNDING_PLAN && pi.getActiveTools().includes('structured_output')) {
         const plan = JSON.parse(readFileSync(process.env.MSTACK_GROUNDING_PLAN, 'utf8'));
@@ -82,7 +87,10 @@ export default function provider(pi: ExtensionAPI) {
           }
         } else {
           const childPlan = context.messages.some(m => m.role === 'user' && JSON.stringify(m).includes('EXECUTE_CHILD_PLAN'));
-          const output = childPlan && last?.role === 'toolResult' ? JSON.stringify(context.messages.filter(m => m.role === 'toolResult').map(m => m.content)) : text.includes('NATIVE_CHILD') ? 'native-child-retained' : 'scripted-complete';
+          const finalDir = process.env.MSTACK_CHILD_FINAL_DIR, name = agentName();
+          const finalFile = finalDir && name ? `${finalDir}/${name}.txt` : undefined;
+          const finalText = finalFile && existsSync(finalFile) ? readFileSync(finalFile, 'utf8') : '';
+          const output = childPlan && last?.role === 'toolResult' ? JSON.stringify(context.messages.filter(m => m.role === 'toolResult').map(m => m.content)) + (finalText ? '\n\n' + finalText : '') : text.includes('NATIVE_CHILD') ? 'native-child-retained' : 'scripted-complete';
           message.content.push({ type: 'text', text: output });
           stream.push({ type: 'text_start', contentIndex: 0, partial: message });
           stream.push({ type: 'text_delta', contentIndex: 0, delta: output, partial: message });

@@ -1,6 +1,6 @@
 {
   "schema": 2,
-  "reviewDigest": "15faac8306af0bd8a306d83f46b8f3114e7d9515a1d704bade3a0009d1e93c4c",
+  "reviewDigest": "962d399faa05ea860d92922818374474b7f543947ac99587b9b2487a618f581e",
   "inputs": [
     {
       "path": "tools/importer.mjs",
@@ -8,7 +8,7 @@
     },
     {
       "path": "tools/render.mjs",
-      "sha256": "a62f3f8e53617ee6aeb2d7d819577714b9dc2b274299fe16c9b33a61a0b03e81"
+      "sha256": "bab89789959fd0a900b66797bcb8a7d2d1a3caf1ad468aa64f8244e417b011c5"
     },
     {
       "path": "tools/upstream.mjs",
@@ -57,6 +57,14 @@
     {
       "path": "port/templates/pstack-explorer.md",
       "sha256": "385e2bffecd2f1134bb173a8695730fa6199967b6fa88bdde8460bbdd99757a2"
+    },
+    {
+      "path": "port/templates/pstack-local-explorer.md",
+      "sha256": "789a1c2e487c4f75df1145f3bdcaa4eff05a84ecc370567e530b47922fb18565"
+    },
+    {
+      "path": "port/templates/pstack-local-worker.md",
+      "sha256": "963e79d6c26d76ec73ac286a7c3880d73a534d00313f0efa6fb7c26c828fa815"
     },
     {
       "path": "port/templates/setup.md",

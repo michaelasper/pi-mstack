@@ -24,7 +24,7 @@ Requires **Node.js 22.19 or later** and **Pi 1.5.0**. Install from npm through P
 
 ```sh
 pi install npm:@trevonistrevon/pi-loop@0.7.19
-pi install npm:pi-subagents@0.87.0
+pi install npm:pi-subagents@0.88.1
 pi install npm:pi-mstack
 ```
 
@@ -65,6 +65,8 @@ Configure terminology, local memory, and native MCP retrieval in the separate `p
 
 Use the named `pstack.ground` workflow for bounded repository evidence and optional explanation. See [repository grounding](docs/reference/grounding.md) for arguments, native acceptance, override behavior, and evidence limits.
 
+Use the packaged `pstack-local-explorer` and `pstack-local-worker` agents for ordinary local exploration and implementation. See [local explorer and worker agents](docs/reference/local-agents.md) for their tool defaults, native overrides, and limits. These defaults are not a sandbox.
+
 Two optional flags are off by default. `pi --pstack-plan` adds a `pstack_plan` tool that keeps one validated ordered plan on the session branch across compaction, reload, navigation, and forks, with a compare-and-append revision that rejects stale writes. `pi --pstack-idle-compact` compacts once at 80 percent context usage when the agent settles idle, and rearms at or below 70 percent. See [saved plans and idle compaction](docs/reference/plans.md) for the schema, privacy limits, stale-write recovery, and the native abort caveat.
 
 ## Documentation
@@ -75,7 +77,7 @@ Choose the kind of help you need:
 | --- | --- |
 | **Tutorial** — learn by doing | [Your first Pi session](docs/tutorials/first-session.md) |
 | **How-to** — complete a task | [Install or update](docs/how-to/install.md) · [Configure models](docs/how-to/configure-models.md) |
-| **Reference** — look up facts | [Commands and configuration](docs/configuration.md) · [Saved plans and idle compaction](docs/reference/plans.md) · [Compatibility](docs/reference/compatibility.md) |
+| **Reference** — look up facts | [Commands and configuration](docs/configuration.md) · [Local explorer and worker agents](docs/reference/local-agents.md) · [Saved plans and idle compaction](docs/reference/plans.md) · [Compatibility](docs/reference/compatibility.md) |
 | **Explanation** — understand the design | [Source, adaptation, and execution](docs/explanation/architecture.md) |
 
 Configuration lives in `pstack/models.json` under Pi’s agent directory, normally `~/.pi/agent`. Missing configuration inherits the exact current parent model; invalid explicit choices remain blockers. Native preflight remains authoritative, worktrees are not cloud sandboxes, and pi-loop needs an active host.

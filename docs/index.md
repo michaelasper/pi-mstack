@@ -18,6 +18,7 @@ Choose a page for what you need now. The user documentation follows [Diátaxis](
 - [Commands, configuration schema, selectors, and mode state](configuration.md).
 - [Maintenance commands, acceptance schema, and retained state](reference/maintenance.md).
 - [Repository grounding and native acceptance](reference/grounding.md).
+- [Local explorer and worker agent defaults](reference/local-agents.md).
 - [Saved plans and optional idle compaction](reference/plans.md).
 - [Compatibility and capability limits](reference/compatibility.md).
 - [Version policy, release commands, and CI](reference/releases.md).

@@ -18,6 +18,24 @@ test('tarball preserves source inventory and discoverable skill names', () => {
   assert.ok(!walk(join(root, 'generated')).some(p => p.includes('benny')));
 });
 
+test('tarball ships local agent sources and unchanged grounded agents', () => {
+  const root = artifact.packageRoot;
+  const pkg = JSON.parse(readFileSync(join(root, 'package.json')));
+  assert.equal(pkg.dependencies['pi-subagents'], '0.88.1');
+  assert.deepEqual(pkg.pi.subagents.agents, ['./generated/agents']);
+  const index = JSON.parse(readFileSync(join(root, 'generated/index.json')));
+  for (const name of ['pstack-local-explorer', 'pstack-local-worker']) {
+    const bytes = readFileSync(join(root, 'generated/agents', name + '.md'));
+    assert.deepEqual(bytes, readFileSync(join(root, 'port/templates', name + '.md')));
+    const record = index.find(row => row.path === `agents/${name}.md`);
+    assert.equal(record?.adapterId, 'local-general-agent');
+    assert.equal(record?.sha256, sha(bytes));
+  }
+  for (const [name, expected] of [['pstack-explorer', '385e2bffecd2f1134bb173a8695730fa6199967b6fa88bdde8460bbdd99757a2'], ['pstack-explainer', '3238da4c6e1ce4ff3a15b6c6461fa9da460ebecdbb9a6b79883e8a8c17248694']]) {
+    assert.equal(sha(readFileSync(join(root, 'generated/agents', name + '.md'))), expected, name);
+  }
+});
+
 test('packed maintenance check runs independently', () => {
   execFileSync(process.execPath, ['tools/upstream.mjs', 'check'], { cwd: artifact.packageRoot });
 });

@@ -4,7 +4,7 @@
 
 ## Installation and invocation
 
-The npm package depends on exactly `pi-subagents` 0.87.0. Pi must load that extension as well as pi-mstack. The resource uses the public `pi-subagents/workflow-resources` import. An unavailable import or absent native owner disables grounding without removing the other pstack commands. `/pstack doctor` reports registration status. Tool presence does not establish owner compatibility.
+The npm package depends on exactly `pi-subagents` 0.88.1. Pi must load that extension as well as pi-mstack. The resource uses the public `pi-subagents/workflow-resources` import. An unavailable import or absent native owner disables grounding without removing the other pstack commands. `/pstack doctor` reports registration status. Tool presence does not establish owner compatibility.
 
 The supported tested route is an independently installed npm tarball with Pi 1.5.0 or 1.5.2. Other installation layouts and pi-subagents versions are unverified.
 
