@@ -16,11 +16,13 @@ for (const boundary of ['preview', 'save']) for (const inherited of [false, true
   process.env.PI_CODING_AGENT_DIR = dir;
   t.after(() => { if (previous === undefined) delete process.env.PI_CODING_AGENT_DIR; else process.env.PI_CODING_AGENT_DIR = previous; rmSync(dir, { recursive: true, force: true }); });
   let revoked = false, currentGate;
+  const refreshGates = new WeakMap();
   const model = { id: 'other', name: 'other', api: 'openai-completions', provider: 'team/custom', baseUrl: 'http://127.0.0.1:1', reasoning: false, input: ['text'], cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, contextWindow: 1000, maxTokens: 100 };
   const provider = {
     id: model.provider, name: 'Gated test provider',
-    auth: { apiKey: { name: 'Test key', check: async () => {
-      const g = currentGate;
+    auth: { apiKey: { name: 'Test key', check: async ({ signal }) => {
+      if (!refreshGates.has(signal)) refreshGates.set(signal, currentGate);
+      const g = refreshGates.get(signal);
       if (g) { g.entered.resolve(); await g.promise; }
       return revoked ? undefined : { type: 'api_key', source: 'test' };
     }, resolve: async () => { throw Error('Import must not resolve credentials'); } } },
@@ -28,7 +30,16 @@ for (const boundary of ['preview', 'save']) for (const inherited of [false, true
   };
   const runtime = await ModelRuntime.create({ authPath: join(dir, 'auth.json'), modelsPath: join(dir, 'models.json'), refreshOnCreate: false, allowModelNetwork: false, providers: [] });
   const registry = new ModelRegistry(runtime);
+  const registered = deferred();
+  const refresh = runtime.refresh.bind(runtime);
+  runtime.refresh = options => {
+    const pending = refresh(options);
+    registered.resolve(pending);
+    return pending;
+  };
   registry.registerProvider(provider);
+  await registered.promise;
+  runtime.refresh = refresh;
   await registry.refresh({ allowNetwork: false, signal: AbortSignal.timeout(5000) });
   assert.ok(registry.getAvailable().some(m => m.provider === model.provider));
   const first = gate(), second = gate();
@@ -63,6 +74,7 @@ for (const boundary of ['preview', 'save']) for (const inherited of [false, true
   assert.equal(readFileSync(path, 'utf8'), original, 'revoked credentials must not authorize a write');
   assert.equal(confirmations, boundary === 'preview' ? 0 : 1, 'revoked credentials must not authorize preview');
   assert.ok(notices.some(text => /Import blocked|preview changed or became invalid/.test(text)), notices.join('\n'));
+  assert.ok(registry.getAvailable().some(m => m.provider === model.provider), 'superseded refresh must leave the stale-positive snapshot under test');
   if (boundary === 'save' && inherited) {
     currentGate = gate();
     // AbortSignal.timeout is unref'ed, and the gated provider owns no live I/O.
