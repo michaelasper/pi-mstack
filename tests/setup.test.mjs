@@ -92,6 +92,16 @@ for (const defaultValue of [true, false, undefined]) test(`RPC import previews e
   const expected = { 'feature, refactoring': 'auto', 'reflect judgment, divergent, synthesizer': 'inherit-parent', 'arena runners': ['mstack-test/other:off', 'inherit-parent', 'mstack-test/other:off'] };
   assert.ok(current.message.includes(source)); assert.ok(current.message.includes(path));
   assert.match(current.message, /Replace ALL configured role assignments/);
+  const summary = [
+    'Configured assignment changes (13 unchanged):',
+    'feature, refactoring: added "auto"',
+    'bug-fix: removed "auto" (will inherit parent)',
+    'reflect judgment, divergent, synthesizer: added "inherit-parent"',
+    'arena runners: added ["mstack-test/other:off","inherit-parent","mstack-test/other:off"]',
+  ].join('\n');
+  assert.ok(current.message.includes(summary));
+  assert.ok(current.message.indexOf(summary) > current.message.indexOf('Replace ALL'));
+  assert.ok(current.message.indexOf(summary) < current.message.indexOf('Configured roles to save:'));
   assert.match(current.message, /outside session picker scope/);
   assert.ok(current.message.includes(`Preserved potetoModeDefault: ${defaultValue ?? 'absent'}`));
   assert.ok(current.message.includes(JSON.stringify(expected, null, 2)));
@@ -101,6 +111,47 @@ for (const defaultValue of [true, false, undefined]) test(`RPC import previews e
   assert.deepEqual(JSON.parse(readFileSync(path)), { version: 'pi-mstack/1', ...(defaultValue === undefined ? {} : { potetoModeDefault: defaultValue }), roles: expected });
   assert.equal(statSync(path).mode & 0o777, 0o600);
   assert.equal(readFileSync(source, 'utf8'), text);
+});
+
+test('RPC import previews changed scalar and panel values and cancellation preserves bytes', { timeout: 30000 }, async t => {
+  const dir = join(artifact.dir, 'import-changed'); mkdirSync(dir);
+  const iso = isolated(dir, artifact.packageRoot);
+  const path = join(iso.agentDir, 'pstack/models.json'); mkdirSync(join(iso.agentDir, 'pstack'));
+  const original = '{"version":"pi-mstack/1","roles":{"bug-fix":"auto","arena runners":["inherit-parent","mstack-test/other:off","inherit-parent"]}}\n';
+  writeFileSync(path, original);
+  const source = join(dir, 'roles');
+  writeFileSync(source, 'arena runners: mstack-test/other:off, inherit-parent\nbug-fix: inherit-parent');
+  const client = rpc({ dir, ...iso });
+  t.after(async () => { await client.stop(); retain('changed-cancel', client, path); });
+  await client.send('get_state');
+  const dialog = client.wait(e => e.method === 'confirm');
+  const prompt = client.send('prompt', { message: `/setup-pstack import ${source}` });
+  const current = await dialog;
+  assert.ok(current.message.includes([
+    'Configured assignment changes (15 unchanged):',
+    'bug-fix: changed "auto" -> "inherit-parent"',
+    'arena runners: changed ["inherit-parent","mstack-test/other:off","inherit-parent"] -> ["mstack-test/other:off","inherit-parent"]',
+  ].join('\n')));
+  client.respond(current.id, { confirmed: false }); await prompt;
+  assert.equal(readFileSync(path, 'utf8'), original);
+});
+
+test('RPC unchanged import still confirms and saves through the transaction', { timeout: 30000 }, async t => {
+  const dir = join(artifact.dir, 'import-unchanged'); mkdirSync(dir);
+  const iso = isolated(dir, artifact.packageRoot);
+  const path = join(iso.agentDir, 'pstack/models.json'); mkdirSync(join(iso.agentDir, 'pstack'));
+  const config = { version: 'pi-mstack/1', roles: { 'bug-fix': 'auto' } };
+  writeFileSync(path, JSON.stringify(config));
+  const source = join(dir, 'roles'); writeFileSync(source, 'bug-fix: auto');
+  const client = rpc({ dir, ...iso });
+  t.after(async () => { await client.stop(); retain('unchanged-save', client, path); });
+  await client.send('get_state');
+  const dialog = client.wait(e => e.method === 'confirm');
+  const prompt = client.send('prompt', { message: `/setup-pstack import ${source}` });
+  const current = await dialog;
+  assert.ok(current.message.includes('\nNo configured assignment changes.\n'));
+  client.respond(current.id, { confirmed: true }); await prompt;
+  assert.equal(readFileSync(path, 'utf8'), JSON.stringify(config, null, 2) + '\n');
 });
 
 for (const mutation of ['cancel', 'destination', 'source', 'model', 'thinking', 'remove', 'revoke', 'reregister-revoke', 'lock', 'collision']) test(`RPC import pending confirmation handles ${mutation}`, { timeout: 30000 }, async t => {

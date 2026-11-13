@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, rmSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { inspectRoles, roles, parseConfig, splitSelector, loadConfig, saveConfig, roleData, modelChoices, policyStatus } from '../extensions/pstack/config.ts';
+import { roleChangeSummary, inspectRoles, roles, parseConfig, splitSelector, loadConfig, saveConfig, roleData, modelChoices, policyStatus } from '../extensions/pstack/config.ts';
 import { enabledOnBranch } from '../extensions/pstack/index.ts';
 import { SessionManager } from '@earendil-works/pi-coding-agent';
 
@@ -17,6 +17,45 @@ test('versioned role boundary preserves full IDs, ordered repeated panels and in
   assert.deepEqual(parseConfig(input), input);
   for (const potetoModeDefault of [true, false]) assert.deepEqual(parseConfig({ ...input, potetoModeDefault }), { ...input, potetoModeDefault });
   for (const potetoModeDefault of ['on', 'false', 1, null, {}]) assert.throws(() => parseConfig({ ...input, potetoModeDefault }), /Invalid/);
+});
+
+test('configured assignment summary distinguishes absence, inheritance, and exact scalar values', () => {
+  for (const [current, next, line] of [
+    [{}, { 'bug-fix': 'provider/model:off' }, 'bug-fix: added "provider/model:off"'],
+    [{ 'bug-fix': 'auto' }, {}, 'bug-fix: removed "auto" (will inherit parent)'],
+    [{ 'bug-fix': 'provider/old:off' }, { 'bug-fix': 'provider/new:high' }, 'bug-fix: changed "provider/old:off" -> "provider/new:high"'],
+    [{ 'bug-fix': 'auto' }, { 'bug-fix': 'inherit-parent' }, 'bug-fix: changed "auto" -> "inherit-parent"'],
+    [{}, { 'bug-fix': 'inherit-parent' }, 'bug-fix: added "inherit-parent"'],
+    [{}, { 'bug-fix': 'provider/model\u0000' }, 'bug-fix: added "provider/model\\u0000"'],
+  ]) {
+    parseConfig({ version: 'pi-mstack/1', roles: current });
+    parseConfig({ version: 'pi-mstack/1', roles: next });
+    assert.equal(roleChangeSummary(current, next), `Configured assignment changes (16 unchanged):\n${line}`);
+  }
+});
+
+test('configured assignment summary preserves panel order and duplicate counts', () => {
+  for (const [current, next, line] of [
+    [['auto', 'inherit-parent'], ['inherit-parent', 'auto'], 'arena runners: changed ["auto","inherit-parent"] -> ["inherit-parent","auto"]'],
+    [['auto', 'auto'], ['auto'], 'arena runners: changed ["auto","auto"] -> ["auto"]'],
+    [undefined, ['auto', 'auto'], 'arena runners: added ["auto","auto"]'],
+    [['auto', 'auto'], undefined, 'arena runners: removed ["auto","auto"] (will inherit parent)'],
+  ]) {
+    assert.equal(roleChangeSummary(current ? { 'arena runners': current } : {}, next ? { 'arena runners': next } : {}), `Configured assignment changes (16 unchanged):\n${line}`);
+  }
+});
+
+test('configured assignment summary ignores object order and emits registry order', () => {
+  const current = { 'arena runners': ['auto', 'auto'], 'bug-fix': 'auto' };
+  const reordered = { 'bug-fix': 'auto', 'arena runners': ['auto', 'auto'] };
+  assert.equal(roleChangeSummary(current, reordered), 'No configured assignment changes.');
+  assert.equal(roleChangeSummary({}, {}), 'No configured assignment changes.');
+  assert.equal(roleChangeSummary(current, { 'arena runners': ['inherit-parent'], 'feature, refactoring': 'auto' }), [
+    'Configured assignment changes (14 unchanged):',
+    'feature, refactoring: added "auto"',
+    'bug-fix: removed "auto" (will inherit parent)',
+    'arena runners: changed ["auto","auto"] -> ["inherit-parent"]',
+  ].join('\n'));
 });
 
 test('setup writes atomically with restrictive mode and refuses stale writes', t => {
