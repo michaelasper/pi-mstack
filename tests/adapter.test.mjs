@@ -24,6 +24,14 @@ for (const [scenario, instruction] of gates) {
   });
 }
 
+test('packed mapping instructions defer to runtime guidance without granting authority', () => {
+  assert.match(adapter, /Use the question mapping in the pi-mstack-mappings section when present/);
+  assert.match(adapter, /Recheck that the tool is actually declared and available/);
+  assert.match(adapter, /ask a plain question/);
+  assert.match(adapter, /not capabilities, authentication, review verdicts, or merge authority/);
+  assert.match(adapter, /absent CLI, failed or ambiguous result, or nonmember PR blocks/);
+});
+
 test('packed authoring procedure and destinations are Pi-native prose, not model compliance', () => {
   const skills = join(artifact.packageRoot, 'generated/skills');
   for (const path of readdirSync(skills, { recursive: true }).filter(path => path.endsWith('.md'))) {

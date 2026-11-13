@@ -52,6 +52,36 @@ MCP sources have `id`, `kind: "mcp"`, the exact native `mcp__server__tool` ident
 
 Configuration files are limited to 64 KiB. The merged glossary is limited to 32 entries and 8 KiB of serialized JSON. The merged source list is limited to four entries in user-then-project order. IDs must be unique across both scopes. Unknown fields are rejected.
 
+### Harness mappings
+
+The optional `mappings` object contains declarative question-tool, review-bot, and stack guidance. It does not execute commands, activate tools, load providers, request reviews, or grant authority.
+
+```json
+{
+	"version": "pi-mstack/environment/1",
+	"mappings": {
+		"question": { "tool": "ask_operator" },
+		"reviewBots": [{ "identity": "review-service[bot]", "request": "Request review through the installed forge integration." }],
+		"stack": {
+			"membership": "Inspect the stack CLI output for this exact repository and PR. Retain its stack identity.",
+			"commands": { "push": "Use the installed stack CLI push operation." }
+		}
+	}
+}
+```
+
+Each authorized project category replaces the entire user category. Absent categories inherit. An empty `mappings` object inherits all categories. `question: null`, `stack: null`, and `reviewBots: []` clear their categories. Stack operations never merge across scopes. Missing operations remain unsupported. The supported keys in `commands` are `create`, `link`, `rebase`, `push`, and `merge`. `membership` and `commands` are required when `stack` is present.
+
+Tool names are limited to 256 characters. Bot identities are limited to 128 characters, with at most eight unique case-sensitive identities. Request, membership, and command strings are limited to 2048 characters each. Strings must be nonempty. Control characters other than newline and tab are rejected. Unknown keys are rejected at every level. Effective mappings are limited to 16 KiB of UTF-8 serialized JSON after category replacement. The existing 64 KiB input-file bound also applies.
+
+Malformed user or authorized project mappings disable the entire environment aggregate, including naming, glossary, and context sources. Unauthorized project mappings are not read. Exact user grants and native project trust still apply.
+
+One owned `pi-mstack-mappings` prompt section refreshes each run. Empty or invalid configuration removes the section. Operator values use JSON encoding with escaped angle brackets to preserve the host's section delimiters. This encoding does not prevent prompt injection. Mapping text reaches the model provider and may remain in native prompt history. No mapping-specific conversation message or authorization cache is created.
+
+Question availability uses the selected, non-hidden tool declarations and registered `direct` or `model-only` exposure. Inactive, absent, hidden, `codemode`, and `deferred` tools are unavailable for this mapping. A missing tool produces an explicit unavailable notice and plain-question fallback. Availability is an advisory snapshot. Later handlers can change the declarations, so actual use requires a recheck.
+
+Review-bot configuration proves neither authentication nor a completed review. Stack guidance proves no membership. Dependent stack actions require actual command output for the exact repository and PR with unambiguous membership. An absent CLI, failed or ambiguous result, or nonmember PR blocks those actions. Mappings do not satisfy independent-review gates or authorize merge. These requirements are model-facing instructions, not runtime enforcement of external services.
+
 ### Project authorization
 
 Project environment loading requires both native project trust and an exact grant in the user agent directory's `pstack/environment-grants.json`.

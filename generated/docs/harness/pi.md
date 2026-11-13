@@ -14,7 +14,7 @@ Use native subagent with agent, task, async, model, cwd, worktree, output, actio
 
 ### AskQuestion
 
-Use an available user-interaction tool or ask a plain question. Do not invent a tool.
+Use the question mapping in the pi-mstack-mappings section when present. Recheck that the tool is actually declared and available before use. Otherwise use an available user-interaction tool or ask a plain question. Do not invent or activate a tool.
 
 ### todolist
 
@@ -94,7 +94,7 @@ Acquire the current session path in Pi's local built-in bash tool with `printf '
 
 ### Cursor-only features
 
-No Cursor service parity. Existing forge comments remain evidence. Benny triggers, cloud VMs, bot webhooks, secret storage, SendToUser, editor selection, and video rendering need external services.
+No Cursor service parity. The pi-mstack-mappings section may supply review-bot and stack guidance, not capabilities, authentication, review verdicts, or merge authority. Before dependent stack actions, retain actual membership evidence for the exact repository and PR. An absent CLI, failed or ambiguous result, or nonmember PR blocks those actions. Existing forge comments remain evidence. Benny triggers, cloud VMs, bot webhooks, secret storage, SendToUser, editor selection, and video rendering need external services.
 
 ### Run another pstack skill
 
