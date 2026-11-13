@@ -15,16 +15,16 @@
   },
   {
     "path": "docs/harness/pi.md",
-    "sha256": "ab5ea9092a603374b7ebbe6e2a229e7aac749668340873ab1a0d9e84834daa60",
+    "sha256": "5a07e20779a548154f41f593da4ec7b5eaa91daaa631fa9f4df423dae769e6a9",
     "gitMode": "100644",
-    "sourceHash": "7fee12d373b7070168f96065846b6f660e408b21f0213fa6796a80187a58d3d7",
+    "sourceHash": "779910e98b22cc41efaaf0c044cae01aed4951d4ee4584a15599e6df888475f0",
     "adapterId": "mapping-registry"
   },
   {
     "path": "host-coverage.json",
     "sha256": "567eecc9283a7a927f78d908f8f05f28514b89a0b32cbd0e8089ac71a03e39a5",
     "gitMode": "100644",
-    "sourceHash": "7fee12d373b7070168f96065846b6f660e408b21f0213fa6796a80187a58d3d7",
+    "sourceHash": "779910e98b22cc41efaaf0c044cae01aed4951d4ee4584a15599e6df888475f0",
     "adapterId": "scanner"
   },
   {

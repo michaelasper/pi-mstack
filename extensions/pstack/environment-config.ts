@@ -12,10 +12,26 @@ const source = Type.Union([
   Type.Object({ id, kind: Type.Literal('memory'), path: text, delivery: Type.Union([Type.Literal('automatic'), Type.Literal('on-demand')]) }, { additionalProperties: false }),
   Type.Object({ id, kind: Type.Literal('mcp'), tool: Type.String({ maxLength: 256, pattern: '^mcp__[A-Za-z0-9_]+__[A-Za-z0-9_]+$' }), queryArgument: Type.String({ pattern: '^[A-Za-z][A-Za-z0-9_]{0,63}$' }) }, { additionalProperties: false }),
 ]);
-const schema = Type.Object({ version: Type.Literal('pi-mstack/environment/1'), naming: Type.Optional(Type.Union([Type.Literal('task'), Type.Literal('off')])), glossary: Type.Optional(glossary), sources: Type.Optional(Type.Array(source, { maxItems: 4 })), roles: Type.Optional(Type.Unknown()) }, { additionalProperties: false });
+const mappingText = (maxLength: number) => Type.String({ ...text, maxLength });
+const question = Type.Object({ tool: mappingText(256) }, { additionalProperties: false });
+const reviewBots = Type.Array(Type.Object({ identity: mappingText(128), request: mappingText(2048) }, { additionalProperties: false }), { maxItems: 8 });
+const stack = Type.Object({
+  membership: mappingText(2048),
+  commands: Type.Object({
+    create: Type.Optional(mappingText(2048)), link: Type.Optional(mappingText(2048)),
+    rebase: Type.Optional(mappingText(2048)), push: Type.Optional(mappingText(2048)), merge: Type.Optional(mappingText(2048)),
+  }, { additionalProperties: false }),
+}, { additionalProperties: false });
+const mappings = Type.Object({
+  question: Type.Optional(Type.Union([question, Type.Null()])),
+  reviewBots: Type.Optional(reviewBots),
+  stack: Type.Optional(Type.Union([stack, Type.Null()])),
+}, { additionalProperties: false });
+export type HarnessMappings = { question?: Static<typeof question>; reviewBots: Static<typeof reviewBots>; stack?: Static<typeof stack> };
+const schema = Type.Object({ mappings: Type.Optional(mappings), version: Type.Literal('pi-mstack/environment/1'), naming: Type.Optional(Type.Union([Type.Literal('task'), Type.Literal('model'), Type.Literal('off')])), glossary: Type.Optional(glossary), sources: Type.Optional(Type.Array(source, { maxItems: 4 })), roles: Type.Optional(Type.Unknown()) }, { additionalProperties: false });
 type Config = Omit<Static<typeof schema>, 'roles'> & { roles?: Roles };
 export type Source = Static<typeof source> & { projectRoot?: string };
-export type Environment = { kind: 'valid'; naming: 'task' | 'off'; glossary: Static<typeof glossary>; sources: Source[]; roles?: Roles } | { kind: 'invalid'; diagnostic: string };
+export type Environment = { kind: 'valid'; naming: NonNullable<Config['naming']>; glossary: Static<typeof glossary>; sources: Source[]; mappings: HarnessMappings; roles?: Roles } | { kind: 'invalid'; diagnostic: string };
 
 export function readBoundedFile(path: string, limit: number, projectRoot?: string): string {
   const canonical = realpathSync(path);
@@ -53,6 +69,8 @@ function readConfig(path: string, projectRoot?: string): Config {
   }
   const value: unknown = JSON.parse(raw);
   if (!Value.Check(schema, value) || (projectRoot && value.naming !== undefined)) throw Error('Invalid configuration');
+  const bots = value.mappings?.reviewBots ?? [];
+  if (new Set(bots.map(bot => bot.identity)).size !== bots.length) throw Error('Duplicate review bot');
   const { roles, ...config } = value;
   return { ...config, ...(roles === undefined ? {} : { roles: parseRoles(roles) }) };
 }
@@ -127,7 +145,12 @@ export function loadEnvironment(request: EnvironmentRequest): Environment {
       return s;
     }), ...(access.kind === 'allowed' ? (project?.sources ?? []).map(s => s.kind === 'memory' ? { ...s, path: resolve(access.root, s.path), projectRoot: access.root } : s) : [])];
     if (entries.length > 32 || Buffer.byteLength(JSON.stringify(entries)) > 8192 || sources.length > 4 || new Set(sources.map(s => s.id)).size !== sources.length) throw Error('Environment limits');
+    const merged = { ...user.mappings, ...project?.mappings };
+    const effective: HarnessMappings = { reviewBots: merged.reviewBots ?? [] };
+    if (merged.question) effective.question = merged.question;
+    if (merged.stack) effective.stack = merged.stack;
+    if (Buffer.byteLength(JSON.stringify(effective)) > 16384) throw Error('Mapping limits');
     const roles = mergeRoles(user.roles, project?.roles);
-    return { kind: 'valid', naming: user.naming ?? 'task', glossary: entries, sources, ...(Object.keys(roles).length ? { roles } : {}) };
-  } catch { return { kind: 'invalid', diagnostic: 'Environment configuration invalid or unreadable. Naming, glossary and context sources are disabled. Check pstack/environment.json in user and authorized project configuration.' }; }
+    return { kind: 'valid', naming: user.naming ?? 'task', glossary: entries, sources, mappings: effective, ...(Object.keys(roles).length ? { roles } : {}) };
+  } catch { return { kind: 'invalid', diagnostic: 'Environment configuration invalid or unreadable. Naming, glossary, context sources and harness mappings are disabled. Check pstack/environment.json in user and authorized project configuration.' }; }
 }

@@ -63,7 +63,9 @@ test('role aggregation rejects collisions and applies exact project authority wi
   const file = join(cwd, '.pi/pstack/environment.json'), grant = join(agentDir, 'pstack/environment-grants.json');
   const config = roles => JSON.stringify({ version: 'pi-mstack/environment/1', roles });
   const load = nativeTrusted => loadEnvironment({ agentDir, cwd, nativeTrusted, sessionId: dir, notify() {} });
-  writeFileSync(join(agentDir, 'pstack/environment.json'), config({ tracker: { update: operation() } }));
+  writeFileSync(join(agentDir, 'pstack/environment.json'), JSON.stringify({ version: 'pi-mstack/environment/1', naming: 'model', mappings: { question: { tool: 'ask_operator' } }, roles: { tracker: { update: operation() } } }));
+  assert.equal(load(true).naming, 'model');
+  assert.deepEqual(load(true).mappings, { reviewBots: [], question: { tool: 'ask_operator' } });
   writeFileSync(file, '{MALFORMED'); assert.equal(load(true).kind, 'valid');
   writeFileSync(grant, JSON.stringify({ version: 'pi-mstack/environment-grants/1', projects: [cwd] }));
   assert.equal(load(true).kind, 'invalid'); assert.equal(load(false).kind, 'valid');
@@ -94,7 +96,7 @@ test('role dispatch rejects oversized correlation IDs and aborts stale lifetimes
   context({ on: (name, handler) => { handlers[name] = handler; }, registerTool: value => { tool = value; }, getAllTools: () => [{ name: 'mcp__tracker__update', sourceInfo: { path: 'builtin:mcp' } }] });
   const ctx = { cwd: dir, isProjectTrusted: () => false, sessionManager: { getSessionId: () => 'session' }, tools: [{ name: 'mcp__tracker__update' }], executeTool: () => { calls++; return new Promise(resolve => { release = resolve; }); } };
   const params = { role: 'tracker', operation: 'update', args: { key: 'x', count: 1, done: true } };
-  const refresh = () => handlers.before_agent_start({ systemPromptOptions: { sections: {} } }, ctx);
+  const refresh = () => handlers.before_agent_start({ systemPromptOptions: { sections: {}, selectedTools: [], hiddenTools: [] } }, ctx);
   refresh();
   assert.equal((await tool.execute('x'.repeat(1025), params, undefined, undefined, ctx)).details.reason, 'call-id-limit');
   assert.equal(calls, 0);

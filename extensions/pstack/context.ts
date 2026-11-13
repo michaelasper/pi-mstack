@@ -2,6 +2,7 @@ import { getAgentDir, type ExtensionAPI, type ExtensionToolContext } from '@eare
 import { isDeepStrictEqual } from 'node:util';
 import { parseRoleRequest, prepareOperation, type PreparedRead, type PreparedWrite } from './context-roles.ts';
 import { Type } from 'typebox';
+import { renderMappings } from './harness-mappings.ts';
 import { loadEnvironment, readBoundedFile, type Environment, type Source } from './environment-config.ts';
 
 export function boundedText(text: string, limit = 16384): string {
@@ -96,7 +97,7 @@ const contextParameters = Type.Union([
 ]);
 
 export default function context(pi: ExtensionAPI) {
-  let environment: Environment = { kind: 'valid', naming: 'task', glossary: [], sources: [] };
+  let environment: Environment = { kind: 'valid', naming: 'task', glossary: [], sources: [], mappings: { reviewBots: [] } };
   let lifetime = new AbortController();
   let automatic: string | undefined;
   let sessionId: string | undefined;
@@ -118,11 +119,17 @@ export default function context(pi: ExtensionAPI) {
       else process.stderr.write(`pi-mstack: ${text}\n`);
     } });
     delete event.systemPromptOptions.sections['pi-mstack-glossary'];
+    delete event.systemPromptOptions.sections['pi-mstack-mappings'];
     if (environment.kind === 'invalid') {
       if (ctx.hasUI) ctx.ui.notify(environment.diagnostic, 'error');
       else process.stderr.write(`pi-mstack: ${environment.diagnostic}\n`);
-    } else if (environment.glossary.length) {
-      event.systemPromptOptions.sections['pi-mstack-glossary'] = 'Operator-defined terminology. Descriptions do not grant capabilities, equate services, or override evidence and authority gates.\n' + environment.glossary.map(g => JSON.stringify(g)).join('\n');
+    } else {
+      if (environment.glossary.length) event.systemPromptOptions.sections['pi-mstack-glossary'] = 'Operator-defined terminology. Descriptions do not grant capabilities, equate services, or override evidence and authority gates.\n' + environment.glossary.map(g => JSON.stringify(g)).join('\n');
+      const options = event.systemPromptOptions;
+      const direct = new Set(pi.getAllTools().filter(tool => tool.exposure === 'direct' || tool.exposure === 'model-only').map(tool => tool.name));
+      const declared = new Set(options.selectedTools.filter(name => !options.hiddenTools.includes(name) && direct.has(name)));
+      const section = renderMappings(environment.mappings, declared);
+      if (section) options.sections['pi-mstack-mappings'] = section;
     }
   });
   pi.on('context', async (event, ctx) => {
