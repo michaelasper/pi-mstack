@@ -112,6 +112,20 @@ export async function freshImportAvailability(config: Config, ctx: Pick<Extensio
     throw Error('Fresh authentication check failed. Configuration unchanged. Retry the import.');
   }
 }
+export function roleChangeSummary(current: Config['roles'], next: Config['roles']): string {
+  const changes: string[] = [];
+  for (const { name } of roles) {
+    const before = JSON.stringify(current[name]);
+    const after = JSON.stringify(next[name]);
+    if (before === after) continue;
+    if (before === undefined) changes.push(`${name}: added ${after}`);
+    else if (after === undefined) changes.push(`${name}: removed ${before} (will inherit parent)`);
+    else changes.push(`${name}: changed ${before} -> ${after}`);
+  }
+  return changes.length
+    ? `Configured assignment changes (${roles.length - changes.length} unchanged):\n${changes.join('\n')}`
+    : 'No configured assignment changes.';
+}
 export function inspectRoles(config: Config, ctx: Pick<ExtensionContext, 'model' | 'thinkingLevel' | 'modelRegistry' | 'scopedModels'>, availability?: ReadonlySet<string>) {
   let valid = true;
   const blocked = (text: string) => { valid = false; return text; };

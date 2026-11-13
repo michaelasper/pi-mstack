@@ -4,7 +4,7 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { getAgentDir, stripFrontmatter, type ExtensionAPI, type ExtensionContext, type SessionEntry } from '@earendil-works/pi-coding-agent';
 import { getSupportedThinkingLevels } from '@earendil-works/pi-ai';
-import { configPath, freshImportAvailability, inspectRoles, loadConfig, modelChoices, parseConfig, policyStatus, roleData, roles, saveConfig } from './config.ts';
+import { configPath, freshImportAvailability, inspectRoles, loadConfig, modelChoices, parseConfig, policyStatus, roleChangeSummary, roleData, roles, saveConfig } from './config.ts';
 import { parseImportPath, parseLegacyRoles } from './import.ts';
 
 import { sameFile } from './resources.ts';
@@ -205,7 +205,8 @@ export default function pstack(pi: ExtensionAPI) {
           if (!ownsResources(ctx)) return;
           const preview = inspectRoles(draft, ctx, availability);
           if (!preview.valid) throw Error(`Import blocked. Configuration unchanged.\n${preview.table}`);
-          const message = `Source: ${source}\nDestination: ${path}\nReplace ALL configured role assignments. Omitted roles inherit the parent.\nPreserved potetoModeDefault: ${draft.potetoModeDefault ?? 'absent'}\n\nConfigured roles to save:\n${JSON.stringify(draft.roles, null, 2)}\n\nEffective roles:\n${preview.table}`;
+          const summary = roleChangeSummary(state.config.roles, draft.roles);
+          const message = `Source: ${source}\nDestination: ${path}\nReplace ALL configured role assignments. Omitted roles inherit the parent.\n\n${summary}\n\nPreserved potetoModeDefault: ${draft.potetoModeDefault ?? 'absent'}\n\nConfigured roles to save:\n${JSON.stringify(draft.roles, null, 2)}\n\nEffective roles:\n${preview.table}`;
           if (!(await ctx.ui.confirm('Import pstack role configuration?', message))) return;
           const rechecked = await ctx.modelRegistry.refresh({ allowNetwork: false, signal: AbortSignal.timeout(5000) });
           if (rechecked.aborted || rechecked.errors.size || ctx.modelRegistry.getError()) throw Error('Registry refresh failed. Configuration unchanged. Retry the import.');
