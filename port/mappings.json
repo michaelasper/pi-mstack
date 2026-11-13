@@ -7,7 +7,7 @@
   {
     "key": "AskQuestion",
     "pattern": "AskQuestion|allow_multiple",
-    "instruction": "Use an available user-interaction tool or ask a plain question. Do not invent a tool."
+    "instruction": "Use the question mapping in the pi-mstack-mappings section when present. Recheck that the tool is actually declared and available before use. Otherwise use an available user-interaction tool or ask a plain question. Do not invent or activate a tool."
   },
   {
     "key": "todolist",
@@ -107,7 +107,7 @@
   {
     "key": "Cursor-only features",
     "pattern": "Bugbot|Cursor [Aa]utomation|cursor\\.(sh|com)/automations|[Cc]loud [Aa]gent|built-in PR tool",
-    "instruction": "No Cursor service parity. Existing forge comments remain evidence. Benny triggers, cloud VMs, bot webhooks, secret storage, SendToUser, editor selection, and video rendering need external services."
+    "instruction": "No Cursor service parity. The pi-mstack-mappings section may supply review-bot and stack guidance, not capabilities, authentication, review verdicts, or merge authority. Before dependent stack actions, retain actual membership evidence for the exact repository and PR. An absent CLI, failed or ambiguous result, or nonmember PR blocks those actions. Existing forge comments remain evidence. Benny triggers, cloud VMs, bot webhooks, secret storage, SendToUser, editor selection, and video rendering need external services."
   },
   {
     "key": "Run another pstack skill",

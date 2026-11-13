@@ -56,6 +56,17 @@ Pi's built-in MCP supports foreground children with configured `mcp:` selection.
 
 Keep credentials in Pi's native credential configuration, not `environment.json`. Review the [privacy and limits](../reference/environment.md#retrieval-and-privacy) before authorizing memory files or remote sources.
 
+## Configure question tools, review bots, and stack guidance
+
+1. Add a `mappings` object to your user `pstack/environment.json`. Preserve the version and existing fields. Use the [mapping reference](../reference/environment.md#harness-mappings) for the complete shape and limits.
+2. Set `question.tool` to the exact registered tool name. Load its provider and select the tool through native Pi configuration. Use a `direct` or `model-only` tool. A mapping does not load or activate it.
+3. Add review-bot identities and request instructions to `reviewBots` when needed. Verify authentication through the actual forge integration before requesting a review.
+4. Add `stack.membership` and the supported operations under `stack.commands`. Keep all operations within one stack CLI. Retain actual membership output for the exact repository and PR before dependent actions.
+5. Start the next run. Check that a configured available question tool is named as available. If it is unavailable, use a plain question rather than assume the mapping grants access.
+6. To remove a category in an authorized project override, set `question` or `stack` to `null`, or set `reviewBots` to `[]`. To inherit user settings, omit that category.
+
+If configuration is invalid, correct it before relying on any environment feature. An invalid authorized mapping disables naming, glossary, and context sources too.
+
 ## Authorize project context
 
 1. Review the project's `.pi/pstack/environment.json` and its memory and MCP sources. A grant permits future content changes at that path.
