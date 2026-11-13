@@ -6,11 +6,17 @@ Versions use [Semantic Versioning](https://semver.org/). A heading records prepa
 
 ### Added
 
+- `pstack-local-explorer` and `pstack-local-worker` packaged agents with ordinary local-tool defaults, fresh context, project instruction inheritance, and explicit native acceptance policies. Their defaults are not enforced grants.
 - `--pstack-plan` registers a default-off `pstack_plan` tool for one validated, ordered plan per session branch, with an opaque compare-and-append revision, explicit absent, cleared, and unsupported states, and provider-visible restoration built per request.
 - `--pstack-idle-compact` compacts once at 80 percent context usage when the agent settles idle, rearms at or below 70 percent, and disarms after a failure or ineffective summary.
 
+### Changed
+
+- Update the tested and installed `pi-subagents` dependency to 0.88.1. The package version and Pi 1.5.0 development pin remain unchanged.
+
 ### Limits
 
+- Local agent tool defaults remain native operator-overridable. MCP grants, filesystem isolation, and network isolation are not enforced.
 - Plan state persists with native session persistence, so a conversation-less session can remain memory-only. Compare-and-append is single-runtime and is not a cross-process transaction.
 - Idle compaction is admitted by context usage, not cache age. It makes no cache-hit, cost, or latency promise, and native manual compaction still aborts internally.
 

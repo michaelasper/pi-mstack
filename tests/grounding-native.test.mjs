@@ -17,7 +17,7 @@ const root = join(install, 'node_modules'), pkg = join(root, 'pi-mstack');
 const installedVersions = Object.fromEntries(['@earendil-works/pi-coding-agent', '@earendil-works/pi-ai', 'pi-subagents'].map(name => [name, JSON.parse(readFileSync(join(root, name, 'package.json'))).version]));
 assert.equal(installedVersions['@earendil-works/pi-coding-agent'], version);
 assert.equal(installedVersions['@earendil-works/pi-ai'], version);
-assert.equal(installedVersions['pi-subagents'], '0.87.0');
+assert.equal(installedVersions['pi-subagents'], '0.88.1');
 writeFileSync(join(base, 'install.json'), JSON.stringify({ installedVersions, pack, root }, null, 2));
 process.env.MSTACK_PI_CLI = join(root, '@earendil-works/pi-coding-agent/dist/bundle/cli.js');
 const { isolated, rpc, captures } = await import(join(pkg, 'tests/helpers.mjs'));

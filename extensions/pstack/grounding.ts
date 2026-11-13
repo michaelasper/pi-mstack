@@ -43,7 +43,7 @@ export function registerGrounding(pi: ExtensionAPI, path: string, report: (ctx: 
       const api = await import('pi-subagents/workflow-resources');
       if (current !== generation) return;
       const owner = pi.getAllTools().find(t => t.name === 'subagent' || t.name === 'subagents_enable');
-      if (!owner) throw Error('Native owner is absent. Load pi-subagents@0.87.0 and reload.');
+      if (!owner) throw Error('Native owner is absent. Load pi-subagents@0.88.1 and reload.');
       registration = api.registerWorkflowResource({ sessionId, definition: { name: 'pstack.ground', version: 1, resolve(args) {
         try {
           const request = parseGroundingRequest(args), state = snapshot;
@@ -55,7 +55,7 @@ export function registerGrounding(pi: ExtensionAPI, path: string, report: (ctx: 
       } } });
       diagnostic = `pstack.ground registered. Native owner compatibility and launch eligibility remain unverified. Tool provenance ${JSON.stringify(owner.sourceInfo)}.`;
     } catch (error) {
-      diagnostic = `pstack.ground disabled. Install the npm package with pi-subagents@0.87.0 and reload. ${String(error)}`;
+      diagnostic = `pstack.ground disabled. Install the npm package with pi-subagents@0.88.1 and reload. ${String(error)}`;
       report(ctx, diagnostic, true);
     }
   });

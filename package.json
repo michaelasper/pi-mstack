@@ -85,6 +85,6 @@
     "typescript": "7.0.2"
   },
   "dependencies": {
-    "pi-subagents": "0.87.0"
+    "pi-subagents": "0.88.1"
   }
 }

@@ -28,6 +28,20 @@
     "adapterId": "local-grounding-agent"
   },
   {
+    "path": "agents/pstack-local-explorer.md",
+    "sha256": "789a1c2e487c4f75df1145f3bdcaa4eff05a84ecc370567e530b47922fb18565",
+    "gitMode": "100644",
+    "sourceHash": "789a1c2e487c4f75df1145f3bdcaa4eff05a84ecc370567e530b47922fb18565",
+    "adapterId": "local-general-agent"
+  },
+  {
+    "path": "agents/pstack-local-worker.md",
+    "sha256": "963e79d6c26d76ec73ac286a7c3880d73a534d00313f0efa6fb7c26c828fa815",
+    "gitMode": "100644",
+    "sourceHash": "963e79d6c26d76ec73ac286a7c3880d73a534d00313f0efa6fb7c26c828fa815",
+    "adapterId": "local-general-agent"
+  },
+  {
     "path": "docs/harness/pi.md",
     "sha256": "5a07e20779a548154f41f593da4ec7b5eaa91daaa631fa9f4df423dae769e6a9",
     "gitMode": "100644",
