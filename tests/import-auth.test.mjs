@@ -48,7 +48,7 @@ for (const boundary of ['preview', 'save']) for (const inherited of [false, true
   let confirmations = 0;
   const notices = [], commands = new Map();
   const ownPath = resolve('extensions/pstack/index.ts');
-  const pi = { on() {}, registerCommand(name, command) { commands.set(name, command); }, getCommands() { return [
+  const pi = { on() {}, registerTool() {}, registerCommand(name, command) { commands.set(name, command); }, getCommands() { return [
     ...[...commands.keys()].map(name => ({ name, source: 'extension', sourceInfo: { path: ownPath } })),
     ...['poteto-mode', 'setup-pstack'].map(name => ({ name: `skill:${name}`, source: 'skill', sourceInfo: { path: resolve(`generated/skills/${name}/SKILL.md`) } })),
   ]; } };

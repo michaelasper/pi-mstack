@@ -27,10 +27,10 @@ const mappings = Type.Object({
   stack: Type.Optional(Type.Union([stack, Type.Null()])),
 }, { additionalProperties: false });
 export type HarnessMappings = { question?: Static<typeof question>; reviewBots: Static<typeof reviewBots>; stack?: Static<typeof stack> };
-const schema = Type.Object({ mappings: Type.Optional(mappings), version: Type.Literal('pi-mstack/environment/1'), naming: Type.Optional(Type.Union([Type.Literal('task'), Type.Literal('off')])), glossary: Type.Optional(glossary), sources: Type.Optional(Type.Array(source, { maxItems: 4 })) }, { additionalProperties: false });
+const schema = Type.Object({ mappings: Type.Optional(mappings), version: Type.Literal('pi-mstack/environment/1'), naming: Type.Optional(Type.Union([Type.Literal('task'), Type.Literal('model'), Type.Literal('off')])), glossary: Type.Optional(glossary), sources: Type.Optional(Type.Array(source, { maxItems: 4 })) }, { additionalProperties: false });
 type Config = Static<typeof schema>;
 export type Source = Static<typeof source> & { projectRoot?: string };
-export type Environment = { kind: 'valid'; naming: 'task' | 'off'; glossary: Static<typeof glossary>; sources: Source[]; mappings: HarnessMappings } | { kind: 'invalid'; diagnostic: string };
+export type Environment = { kind: 'valid'; naming: NonNullable<Config['naming']>; glossary: Static<typeof glossary>; sources: Source[]; mappings: HarnessMappings } | { kind: 'invalid'; diagnostic: string };
 
 export function readBoundedFile(path: string, limit: number, projectRoot?: string): string {
   const canonical = realpathSync(path);
