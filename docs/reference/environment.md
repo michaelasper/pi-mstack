@@ -75,10 +75,48 @@ The separate packaged context extension registers `pstack_context({ source, quer
 
 Automatic memory is transient attributed conversation data, not a system instruction or native history entry. It is read once per run and reused across tool follow-ups. The next run refreshes it. Tree changes and session replacement clear it. On-demand retrieval produces a real tool result that can persist in the transcript.
 
-Both forms reach the model provider. All returned context is evidence, not authority. Optional retrieval failure does not block an ordinary task, but cannot satisfy an explicit evidence requirement.
+Automatic memory and on-demand results reach the model provider. Legacy retrieval results are evidence, not authority. Role mutation receipts below are not evidence. Optional retrieval failure does not block an ordinary task, but cannot satisfy an explicit evidence requirement.
 
 Each wrapper result, including attribution, is limited to 16 KiB. Automatic results together are limited to 64 KiB. Queries are limited to 2 KiB. Retrieval waits at most two seconds even when a provider ignores cancellation. Shutdown and branch changes cancel waiting and suppress stale successful delivery. Native connection startup and permission handling have their own lifecycle and limits. Cancellation cannot force an uncooperative provider to stop its underlying work.
 
 These limits and sanitized failure messages apply to pi-mstack's output only. Native nested tool events can expose raw upstream results and errors. Native `nestedCalls` metadata can retain queries and raw errors, including secret-like values. The MCP service and model provider have separate retention policies. This wrapper is not an end-to-end redaction boundary.
 
 See [configure child context tools](../how-to/configure-context.md) for a complete native tools override and MCP example.
+
+## Context roles
+
+The optional `roles` field maps `docs`, `memory`, `tracker`, and `wiki` to named operations. Role names describe intent, not provider capabilities. Each role accepts at most eight operations after user and authorized project configuration are combined. Duplicate role-operation pairs invalidate the aggregate. Project trust and exact user grants apply unchanged.
+
+```json
+{
+	"version": "pi-mstack/environment/1",
+	"roles": {
+		"tracker": {
+			"update": {
+				"effect": "write",
+				"target": { "tool": "mcp__tracker__update", "selector": "tracker/update" },
+				"inputs": { "key": { "type": "string" }, "state": { "type": "string" } },
+				"template": { "key": { "$arg": "key" }, "state": { "$arg": "state" } }
+			}
+		}
+	}
+}
+```
+
+An operation requires `effect`, `target`, `inputs`, and `template`. `effect` is `read` or `write`. `target.tool` is the exact native MCP tool name, limited to 256 UTF-8 bytes. Native punctuation collisions can add hashes. The optional `target.selector` is a raw `server/tool` identifier, also limited to 256 bytes. It accepts letters, digits, underscores, and hyphens in server names, plus periods in tool names. Wildcards, prefixes, modifiers, and additional path segments are rejected. The dispatcher uses `tool` without deriving it from `selector`. A selector is unverified operator data, not identity proof or a grant.
+
+Inputs are a closed map of at most 16 required scalar declarations. Each declaration contains only `type`, which is `string`, `number`, or `boolean`. Operation and input names start with a letter and contain at most 64 letters, digits, underscores, or hyphens. Unknown fields and prototype-sensitive keys are rejected. Missing, extra, mistyped, undeclared, and unused arguments are rejected.
+
+Templates are finite literal JSON objects. An exact `{"$arg":"name"}` leaf substitutes the whole supplied scalar value. Repeated references are allowed. No interpolation, evaluation, environment expansion, dynamic target, or arbitrary object input exists. Literal objects containing `$arg` cannot be represented. Templates allow depth four below the root, 256 total nodes, 16 fields per object, and 16 items per array. Strings are limited to 8 KiB of UTF-8 and numbers must be finite. Request arguments and rendered target arguments each have an independent 8 KiB serialized UTF-8 limit. Repeated substitution can exceed the rendered limit even when a request fits. Native target schema validation remains authoritative.
+
+The inactive-by-default `pstack_context` tool accepts either the existing `{source, query}` form or `{role, operation, args}`. Mixed forms are rejected. For example, the operation above accepts `{"role":"tracker","operation":"update","args":{"key":"TEAM-123","state":"done"}}`. The selected operation must still equal the discovery snapshot when execution reloads configuration. A changed mapping or revoked project grant refuses dispatch until a fresh run.
+
+Read operations return attributed evidence or an unavailable result. Write operations return mutation receipts, never evidence. Before native invocation, failures report `not-dispatched`. After invocation, native errors, permission denials, cancellation, timeout, and lost responses report `unknown-outcome`. A successful native response reports `reported-success`, not independently verified remote state. Mutation receipts include the parent call ID and exact target after dispatch. The call ID is correlation data, not an idempotency key. Pre-dispatch validation failures contain only a bounded diagnostic. Call IDs over 1 KiB refuse dispatch rather than exceed the receipt bound.
+
+Reads wait at most two seconds and writes wait at most 30 seconds. These are wrapper deadlines, not approval-latency guarantees. Cancellation stops waiting, not remote effects. There is no automatic retry, rollback, or exactly-once guarantee. Startup, automatic context, and doctor never invoke role operations. Writes require a currently callable target whose public `sourceInfo.path` is `builtin:mcp`. Alternate adapters are unsupported for writes. Legacy sources retain their existing behavior.
+
+The wrapper declares conservative mutating annotations. Operator effect labels do not prove semantic read-only behavior. Native permissions apply to every nested call, and target grants authorize the entire native tool rather than the template's argument subset. Unclassified legacy sources are not approved future explorer grants. This feature adds no child grant enforcement.
+
+Wrapper text, including receipt metadata, remains limited to 16 KiB. Receipt JSON stays parseable when summaries are truncated. These bounds do not redact native nested records, upstream services, or provider requests. Do not put credentials in templates or arguments.
+
+`/pstack doctor` reports each operation's effect, exact native target, selector status, and current availability. Availability distinguishes unregistered, hidden, model-only, inactive-direct, and callable-snapshot states. A missing selector is not grant-ready. A configured selector remains unverified. Doctor performs no tool calls, activates no tools, and promises neither authentication nor future permission.

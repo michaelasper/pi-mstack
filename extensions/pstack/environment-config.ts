@@ -3,6 +3,7 @@ import { isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { CONFIG_DIR_NAME } from '@earendil-works/pi-coding-agent';
 import { Type, type Static } from 'typebox';
 import { Value } from 'typebox/value';
+import { parseRoles, mergeRoles, type Roles } from './context-roles.ts';
 
 const text = Type.String({ minLength: 1, maxLength: 8192, pattern: '^[^\\x00-\\x08\\x0b-\\x1f\\x7f]*$' });
 const id = Type.String({ pattern: '^[A-Za-z][A-Za-z0-9_-]{0,63}$' });
@@ -11,10 +12,10 @@ const source = Type.Union([
   Type.Object({ id, kind: Type.Literal('memory'), path: text, delivery: Type.Union([Type.Literal('automatic'), Type.Literal('on-demand')]) }, { additionalProperties: false }),
   Type.Object({ id, kind: Type.Literal('mcp'), tool: Type.String({ maxLength: 256, pattern: '^mcp__[A-Za-z0-9_]+__[A-Za-z0-9_]+$' }), queryArgument: Type.String({ pattern: '^[A-Za-z][A-Za-z0-9_]{0,63}$' }) }, { additionalProperties: false }),
 ]);
-const schema = Type.Object({ version: Type.Literal('pi-mstack/environment/1'), naming: Type.Optional(Type.Union([Type.Literal('task'), Type.Literal('off')])), glossary: Type.Optional(glossary), sources: Type.Optional(Type.Array(source, { maxItems: 4 })) }, { additionalProperties: false });
-type Config = Static<typeof schema>;
+const schema = Type.Object({ version: Type.Literal('pi-mstack/environment/1'), naming: Type.Optional(Type.Union([Type.Literal('task'), Type.Literal('off')])), glossary: Type.Optional(glossary), sources: Type.Optional(Type.Array(source, { maxItems: 4 })), roles: Type.Optional(Type.Unknown()) }, { additionalProperties: false });
+type Config = Omit<Static<typeof schema>, 'roles'> & { roles?: Roles };
 export type Source = Static<typeof source> & { projectRoot?: string };
-export type Environment = { kind: 'valid'; naming: 'task' | 'off'; glossary: Static<typeof glossary>; sources: Source[] } | { kind: 'invalid'; diagnostic: string };
+export type Environment = { kind: 'valid'; naming: 'task' | 'off'; glossary: Static<typeof glossary>; sources: Source[]; roles?: Roles } | { kind: 'invalid'; diagnostic: string };
 
 export function readBoundedFile(path: string, limit: number, projectRoot?: string): string {
   const canonical = realpathSync(path);
@@ -52,7 +53,8 @@ function readConfig(path: string, projectRoot?: string): Config {
   }
   const value: unknown = JSON.parse(raw);
   if (!Value.Check(schema, value) || (projectRoot && value.naming !== undefined)) throw Error('Invalid configuration');
-  return value;
+  const { roles, ...config } = value;
+  return { ...config, ...(roles === undefined ? {} : { roles: parseRoles(roles) }) };
 }
 
 type EnvironmentRequest = {
@@ -125,6 +127,7 @@ export function loadEnvironment(request: EnvironmentRequest): Environment {
       return s;
     }), ...(access.kind === 'allowed' ? (project?.sources ?? []).map(s => s.kind === 'memory' ? { ...s, path: resolve(access.root, s.path), projectRoot: access.root } : s) : [])];
     if (entries.length > 32 || Buffer.byteLength(JSON.stringify(entries)) > 8192 || sources.length > 4 || new Set(sources.map(s => s.id)).size !== sources.length) throw Error('Environment limits');
-    return { kind: 'valid', naming: user.naming ?? 'task', glossary: entries, sources };
+    const roles = mergeRoles(user.roles, project?.roles);
+    return { kind: 'valid', naming: user.naming ?? 'task', glossary: entries, sources, ...(Object.keys(roles).length ? { roles } : {}) };
   } catch { return { kind: 'invalid', diagnostic: 'Environment configuration invalid or unreadable. Naming, glossary and context sources are disabled. Check pstack/environment.json in user and authorized project configuration.' }; }
 }
