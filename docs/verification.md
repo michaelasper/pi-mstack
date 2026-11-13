@@ -50,6 +50,21 @@ These are identity observations before tests, not execution attestation, proof t
 | Adapter prose | `tests/adapter.test.mjs` checks mandatory gate wording and exact replacement outcomes. These are prose regressions, not model-compliance evaluations. |
 | Statechart | `tests/statechart.test.mjs` runs the upstream offline CLI and recorded-output tests, then runs broken and fixed fixtures through a packed `node_modules` installation, directly and through symlinks in paths containing spaces. These default checks replay TLC output; they do not run Java. |
 
+## Grounding execution
+
+`tests/grounding.test.mjs` exercises the exact gate source embedded in the workflow. It rejects missing native evidence, reused results, failed checks, mismatched saved references, unsupported policies, and invalid domain reports. It also checks UTF-8 limits and requested versus actual attribution.
+
+`tests/grounding-native.test.mjs` packs the current package and installs it independently with the requested actual Pi version and pi-subagents 0.87.0. Each case records RPC events, provider captures, native status, saved reports, and unchanged settings hashes. The suite covers a held two-explorer barrier, evidence-only, refusal, blocked and schema-invalid reports, missing and malformed acceptance reports, owner policies, explicit launch rejection, abort, and concurrent invocations. Owner verified policy retains its harmless native verification command but blocks unsupported synthesis. Synthetic citations do not claim source inspection.
+
+Run both versions with fresh evidence destinations.
+
+```sh
+MSTACK_GROUNDING_PI_VERSION=1.5.0 MSTACK_GROUNDING_EVIDENCE=/tmp/grounding-1.5.0 node --test tests/grounding-native.test.mjs
+MSTACK_GROUNDING_PI_VERSION=1.5.2 MSTACK_GROUNDING_EVIDENCE=/tmp/grounding-1.5.2 node --test tests/grounding-native.test.mjs
+```
+
+These checks require npm registry access to install dependencies. Both CLI and native child SDK roots point into each independent install. The default `npm test` run includes the 1.5.0 matrix. Evidence destinations must not already contain case directories. Prior diagnostic evidence is never overwritten.
+
 ## Statechart execution and live verification
 
 The Node launcher loads `pi-loader.mjs` before the TypeScript entry point. Its type-stripping hook applies only to the bundled statechart directory, allowing execution inside `node_modules` without changing the handling of other packages. The worker inherits the loader. Source remains pinned; the launcher and symlink-fixture adaptations are hash-bound in `port/patches.json`.

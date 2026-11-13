@@ -4,11 +4,12 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { getAgentDir, stripFrontmatter, type ExtensionAPI, type ExtensionContext, type SessionEntry } from '@earendil-works/pi-coding-agent';
 import { getSupportedThinkingLevels } from '@earendil-works/pi-ai';
-import { configPath, freshImportAvailability, inspectRoles, loadConfig, modelChoices, parseConfig, policyStatus, roleData, roles, saveConfig } from './config.ts';
+import { configPath, freshImportAvailability, inspectRoles, loadConfig, modelChoices, parseConfig, policyStatus, roleChangeSummary, roleData, roles, saveConfig } from './config.ts';
 import { parseImportPath, parseLegacyRoles } from './import.ts';
 
 import { sameFile } from './resources.ts';
 import { registerGoal } from './goal.ts';
+import { registerGrounding } from './grounding.ts';
 import { registerNaming } from './naming.ts';
 import { loadEnvironment } from './environment-config.ts';
 import { operationStatus } from './context-roles.ts';
@@ -37,6 +38,7 @@ export default function pstack(pi: ExtensionAPI) {
     else process.stderr.write(`pi-mstack: ${text}\n`);
   };
   const ownsGoal = registerGoal(pi, ownPath, report);
+  const groundingStatus = registerGrounding(pi, path, report);
   const naming = registerNaming(pi);
   let pendingName: { sessionId: string; raw: string; expected: string } | undefined;
   const clearName = () => { pendingName = undefined; naming.clear(); };
@@ -167,7 +169,7 @@ export default function pstack(pi: ExtensionAPI) {
         const tool = tools.find(tool => tool.name === operation.target.tool);
         return `Context ${role}/${name}: ${operation.effect}; ${operation.target.tool}; ${operationStatus(operation.target.tool, tools, active)}; ${operation.target.selector ? 'selector configured, identity unverified' : 'not grant-ready, no selector'}${operation.effect === 'write' && tool?.sourceInfo?.path !== 'builtin:mcp' ? '; unsupported write adapter' : ''}`;
       }));
-      report(ctx, [`Mode ${isEnabled(ctx) ? 'on' : 'off'}; default ${defaultMode() ? 'on' : 'off'}.`, ...collisions(), ...capabilities, ...operations, 'Context availability is a passive snapshot, not authentication or future permission. Legacy sources are unclassified and are not approved explorer grants.', 'Dependency versions and resolved native agent provenance unverified. Inspect native subagent list/get metadata before claiming bundled restrictions.', `Configuration ${path}`, roleData(loadConfig(path), ctx), policyStatus(pi.getSettings(), ctx.isProjectTrusted(), roleData(loadConfig(path), ctx))].join('\n'));
+      report(ctx, [`Mode ${isEnabled(ctx) ? 'on' : 'off'}; default ${defaultMode() ? 'on' : 'off'}.`, ...collisions(), ...capabilities, groundingStatus(), ...operations, 'Context availability is a passive snapshot, not authentication or future permission. Legacy sources are unclassified and are not approved explorer grants.', 'Dependency versions and resolved native agent provenance unverified. Inspect native subagent list/get metadata before claiming bundled restrictions.', `Configuration ${path}`, roleData(loadConfig(path), ctx), policyStatus(pi.getSettings(), ctx.isProjectTrusted(), roleData(loadConfig(path), ctx))].join('\n'));
     },
   });
   pi.registerCommand('setup-pstack', {
@@ -203,7 +205,8 @@ export default function pstack(pi: ExtensionAPI) {
           if (!ownsResources(ctx)) return;
           const preview = inspectRoles(draft, ctx, availability);
           if (!preview.valid) throw Error(`Import blocked. Configuration unchanged.\n${preview.table}`);
-          const message = `Source: ${source}\nDestination: ${path}\nReplace ALL configured role assignments. Omitted roles inherit the parent.\nPreserved potetoModeDefault: ${draft.potetoModeDefault ?? 'absent'}\n\nConfigured roles to save:\n${JSON.stringify(draft.roles, null, 2)}\n\nEffective roles:\n${preview.table}`;
+          const summary = roleChangeSummary(state.config.roles, draft.roles);
+          const message = `Source: ${source}\nDestination: ${path}\nReplace ALL configured role assignments. Omitted roles inherit the parent.\n\n${summary}\n\nPreserved potetoModeDefault: ${draft.potetoModeDefault ?? 'absent'}\n\nConfigured roles to save:\n${JSON.stringify(draft.roles, null, 2)}\n\nEffective roles:\n${preview.table}`;
           if (!(await ctx.ui.confirm('Import pstack role configuration?', message))) return;
           const rechecked = await ctx.modelRegistry.refresh({ allowNetwork: false, signal: AbortSignal.timeout(5000) });
           if (rechecked.aborted || rechecked.errors.size || ctx.modelRegistry.getError()) throw Error('Registry refresh failed. Configuration unchanged. Retry the import.');
