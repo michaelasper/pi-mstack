@@ -1,6 +1,6 @@
 {
   "schema": 2,
-  "reviewDigest": "d01f1c54f84c30451a34fad47ffd0910066e4e2da3b63346fe10af421de0a08b",
+  "reviewDigest": "4d7b728e1a16c234f38095509d703d9f6d09217576516231b8b992cf8e7cce7f",
   "inputs": [
     {
       "path": "tools/importer.mjs",
@@ -8,7 +8,7 @@
     },
     {
       "path": "tools/render.mjs",
-      "sha256": "c18db55a0e71bb0367f586489c644ba403037966b43aba121d41a343e569b3a5"
+      "sha256": "a62f3f8e53617ee6aeb2d7d819577714b9dc2b274299fe16c9b33a61a0b03e81"
     },
     {
       "path": "tools/upstream.mjs",
@@ -49,6 +49,14 @@
     {
       "path": "port/templates/poteto-agent.md",
       "sha256": "1add5935a3b4e686048e844057630fbe448cf03815fe839e2769066b6e50be5c"
+    },
+    {
+      "path": "port/templates/pstack-explainer.md",
+      "sha256": "3238da4c6e1ce4ff3a15b6c6461fa9da460ebecdbb9a6b79883e8a8c17248694"
+    },
+    {
+      "path": "port/templates/pstack-explorer.md",
+      "sha256": "385e2bffecd2f1134bb173a8695730fa6199967b6fa88bdde8460bbdd99757a2"
     },
     {
       "path": "port/templates/setup.md",

@@ -63,6 +63,8 @@ Use `/goal <text>` to set branch intent without inference, `/goal` to show it, o
 
 Configure terminology, local memory, and native MCP retrieval in the separate `pstack/environment.json`. See [goals, naming and context](docs/reference/environment.md) for the schema and privacy limits, and [configure child context tools](docs/how-to/configure-context.md) for native tool selection. Context never grants authority.
 
+Use the named `pstack.ground` workflow for bounded repository evidence and optional explanation. See [repository grounding](docs/reference/grounding.md) for arguments, native acceptance, override behavior, and evidence limits.
+
 ## Documentation
 
 Choose the kind of help you need:

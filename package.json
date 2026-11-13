@@ -82,7 +82,9 @@
     "@earendil-works/pi-coding-agent": "1.5.0",
     "@trevonistrevon/pi-loop": "0.7.19",
     "@types/node": "26.6.6",
-    "pi-subagents": "0.87.0",
     "typescript": "7.0.2"
+  },
+  "dependencies": {
+    "pi-subagents": "0.87.0"
   }
 }

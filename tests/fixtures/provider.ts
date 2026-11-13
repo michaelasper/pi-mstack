@@ -42,7 +42,17 @@ export default function provider(pi: ExtensionAPI) {
       let calls: Array<{ name: string; arguments: ToolCall['arguments'] }> = [];
       if (last?.role === 'user' && text.includes('EXECUTE_TEST_PLAN') && process.env.MSTACK_PLAN) calls = JSON.parse(readFileSync(process.env.MSTACK_PLAN, 'utf8'));
       if (last?.role === 'user' && text.includes('EXECUTE_CHILD_PLAN') && process.env.MSTACK_CHILD_PLAN) calls = JSON.parse(readFileSync(process.env.MSTACK_CHILD_PLAN, 'utf8'));
+      let held = false;
+      if (last?.role === 'user' && process.env.MSTACK_GROUNDING_PLAN && pi.getActiveTools().includes('structured_output')) {
+        const plan = JSON.parse(readFileSync(process.env.MSTACK_GROUNDING_PLAN, 'utf8'));
+        const explainer = getCurrentSystemPrompt(context.messages)?.includes('<active_agent name="pstack-explainer"/>');
+        const second = context.messages.some(m => m.role === 'user' && JSON.stringify(m).includes('second'));
+        calls = plan[explainer ? 'explainer' : second ? 'second' : 'first'];
+        held = !explainer && second && Boolean(process.env.MSTACK_BARRIER);
+        if (held) appendFileSync(process.env.MSTACK_BARRIER + '.held', 'held');
+      }
       const finish = () => {
+        if (held && process.env.MSTACK_BARRIER && !existsSync(process.env.MSTACK_BARRIER) && !options?.signal?.aborted) { setTimeout(finish, 25); return; }
         if (options?.signal?.aborted) {
           message.stopReason = 'aborted'; message.errorMessage = 'aborted';
           stream.push({ type: 'error', reason: 'aborted', error: message }); stream.end(); return;
