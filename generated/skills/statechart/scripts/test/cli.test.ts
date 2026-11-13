@@ -223,13 +223,15 @@ function startCommand(
   {
     java = path.join(here, "java.ts"),
     tmpdir = fs.mkdtempSync(path.join(os.tmpdir(), "statechart-tmpdir-")),
-  }: { java?: string; tmpdir?: string } = {},
+    execArgv = [],
+  }: { java?: string; tmpdir?: string; execArgv?: string[] } = {},
 ) {
   const name = path.basename(dir);
   const view = path.join(dir, "view.mjs");
   return spawn(
     process.execPath,
     [
+      ...execArgv,
       path.join(here, "../statechart.ts"),
       path.join(dir, `${name}.tla`),
       ...(fs.existsSync(view) ? ["--view", view] : []),
@@ -271,6 +273,142 @@ async function signalWhile<T extends { dir: string; reached: (parent: string) =>
   assert.deepEqual(fs.readdirSync(parent), []);
   assert.deepEqual(fs.readdirSync(tmpdir), []);
   return phase;
+}
+
+async function signalWhileWriting(signal: NodeJS.Signals) {
+  const fakes = fs.mkdtempSync(path.join(os.tmpdir(), "statechart-write-barrier-"));
+  const parent = fs.mkdtempSync(path.join(os.tmpdir(), "statechart-parent-"));
+  const tmpdir = fs.mkdtempSync(path.join(os.tmpdir(), "statechart-tmpdir-"));
+  const preload = path.join(fakes, "hold-write.mjs");
+  const pidFile = path.join(fakes, "worker.pid");
+  const written = path.join(fakes, "written");
+  fs.writeFileSync(
+    preload,
+    `import fs from "node:fs";
+import path from "node:path";
+if (process.argv[1] === ${JSON.stringify(path.join(here, "../worker.ts"))}) {
+  const publish = (file, value) => {
+    fs.writeFileSync(file + ".tmp", value);
+    fs.renameSync(file + ".tmp", file);
+  };
+  publish(${JSON.stringify(pidFile)}, String(process.pid));
+  const { openSync, writeSync, closeSync } = fs;
+  const charts = new Set();
+  let held = false;
+  fs.openSync = function(file, ...args) {
+    const fd = openSync.call(this, file, ...args);
+    if (path.basename(String(file)) === "chart.mmd") charts.add(fd);
+    return fd;
+  };
+  fs.closeSync = function(fd) {
+    charts.delete(fd);
+    return closeSync.call(this, fd);
+  };
+  fs.writeSync = function(fd, ...args) {
+    const count = writeSync.call(this, fd, ...args);
+    if (!held && charts.has(fd) && count > 0) {
+      held = true;
+      publish(${JSON.stringify(written)}, String(fs.fstatSync(fd).size));
+      process.kill(process.pid, "SIGSTOP");
+    }
+    return count;
+  };
+}
+`,
+  );
+  const importArg = `--import=${pathToFileURL(preload).href}`;
+  const child = startCommand(gridCase(150), parent, { tmpdir, execArgv: [importArg] });
+  let stderr = "";
+  let stdout = "";
+  let result: [number | null, NodeJS.Signals | null] | undefined;
+  let spawnError: Error | undefined;
+  let verifiedPid: number | undefined;
+  child.stderr.on("data", (chunk: Buffer) => (stderr += chunk));
+  child.stdout.on("data", (chunk: Buffer) => (stdout += chunk));
+  child.on("error", (error) => (spawnError = error));
+  child.on("close", (code, signal) => (result = [code, signal]));
+  const wait = async (ready: () => boolean, timeout: number, message: string) => {
+    const end = Date.now() + timeout;
+    while (!ready()) {
+      assert.ok(Date.now() < end, message);
+      await sleep(20);
+    }
+  };
+  const workerPid = () => {
+    if (!fs.existsSync(pidFile)) return undefined;
+    const pid = Number(read(pidFile));
+    assert.ok(Number.isSafeInteger(pid) && pid > 0, "Invalid worker PID.");
+    return pid;
+  };
+  const workerState = (pid: number) => {
+    const ps = spawnSync("ps", ["-ww", "-p", String(pid), "-o", "stat=", "-o", "args="], {
+      encoding: "utf8",
+      timeout: 1_000,
+      killSignal: "SIGKILL",
+    });
+    assert.ifError(ps.error);
+    assert.ok(ps.status === 0 || (ps.status === 1 && !ps.stdout.trim()), ps.stderr);
+    if (!ps.stdout.trim()) return undefined;
+    const state = ps.stdout.trim().split(/\s+/)[0];
+    if (!state.startsWith("Z"))
+      assert.ok(ps.stdout.includes(importArg), "Worker PID no longer belongs to this test.");
+    return state;
+  };
+  try {
+    await wait(() => {
+      assert.ifError(spawnError);
+      assert.equal(result, undefined, `Command exited before the write barrier: ${stderr}`);
+      const pid = workerPid();
+      if (pid === undefined || !fs.existsSync(written) || !workerState(pid)?.startsWith("T")) return false;
+      verifiedPid = pid;
+      return true;
+    }, 40_000, "The worker did not stop at the write barrier.");
+    assert.ok(Number(read(written)) > 0, "The worker must write chart bytes before stopping.");
+    assert.ok(child.kill(signal), `Could not deliver ${signal} to the command.`);
+    await wait(() => result !== undefined, 5_000, "The signalled command did not close.");
+    assert.ifError(spawnError);
+    assert.equal(stderr, `${signal} stopped the check, so the command wrote nothing.\n`);
+    assert.equal(result![0], 128 + os.constants.signals[signal]);
+    assert.equal(result![1], null);
+    assert.equal(stdout, "");
+    assert.deepEqual(fs.readdirSync(parent), []);
+    assert.deepEqual(fs.readdirSync(tmpdir), []);
+  } finally {
+    let pid = verifiedPid;
+    try {
+      try {
+        if (pid !== undefined) {
+          try {
+            process.kill(-pid, "SIGKILL");
+          } catch (error) {
+            if ((error as NodeJS.ErrnoException).code !== "ESRCH") throw error;
+          }
+        }
+      } finally {
+        if (!result) child.kill("SIGKILL");
+      }
+      if (pid === undefined) {
+        let state: string | undefined;
+        try {
+          pid = workerPid();
+          state = pid === undefined ? undefined : workerState(pid);
+        } catch {
+          state = undefined;
+        }
+        if (pid !== undefined && state !== undefined && !state.startsWith("Z")) {
+          try {
+            process.kill(-pid, "SIGKILL");
+          } catch (error) {
+            if ((error as NodeJS.ErrnoException).code !== "ESRCH") throw error;
+          }
+        }
+      }
+    } finally {
+      await wait(() => result !== undefined, 5_000, "The command did not close during cleanup.");
+      pid ??= workerPid();
+      if (pid !== undefined) await assertGone(-pid);
+    }
+  }
 }
 
 async function assertGone(pid: number) {
@@ -450,19 +588,7 @@ for (const signal of ["SIGINT", "SIGTERM"] satisfies NodeJS.Signals[]) {
   test(
     `${signal} while the command writes its files stops it, and it writes nothing`,
     { timeout: 60_000 },
-    () =>
-      signalWhile(signal, () => ({
-        dir: gridCase(150),
-        reached: (parent) => {
-          for (const f of fs.readdirSync(parent, { recursive: true, encoding: "utf8" }))
-            if (
-              path.basename(f) === "chart.mmd" &&
-              fs.statSync(path.join(parent, f), { throwIfNoEntry: false })?.size
-            )
-              return true;
-          return false;
-        },
-      })),
+    () => signalWhileWriting(signal),
   );
 }
 

@@ -1030,7 +1030,7 @@
   },
   {
     "path": "skills/statechart/scripts/test/cli.test.ts",
-    "sha256": "70e63bcf2585fc1cb174d8a8c3b033e10d4172a3078009090de46132a616643e",
+    "sha256": "ee2ff2fe5dea78c4e84dc2daa75349b4e6675853fb51f05ad2e16b0e7601950c",
     "gitMode": "100644",
     "sourceHash": "8a3b028dafe2065029a66242f7a3832d18058e772a0dfc1b2c170511ffee8e07",
     "adapterId": "exact:skills/statechart/scripts/test/cli.test.ts"
