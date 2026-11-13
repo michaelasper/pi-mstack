@@ -84,3 +84,14 @@ If configuration is invalid, correct it before relying on any environment featur
 5. Start the next run to load the authorized configuration. To revoke access, remove the path from `projects`. The next run or on-demand retrieval applies the change.
 
 Do not put grants in the checkout. Do not use a parent directory or a glob to authorize several projects. See [project authorization](../reference/environment.md#project-authorization) for limits and revocation behavior.
+
+## Configure a role operation
+
+1. Add a role operation to `pstack/environment.json` using the [context role schema](../reference/environment.md#context-roles). Map scalar inputs to the native tool's arguments with whole-value `$arg` leaves.
+2. Configure the server through Pi's native MCP settings. For writes, use the built-in MCP adapter.
+3. Select `pstack_context` and the exact target through native tool configuration. Do not treat a role label or template as a permission grant.
+4. Run `/pstack doctor` to inspect the passive availability snapshot. Confirm the exact native target, including any collision suffix.
+5. Call `pstack_context` with `role`, `operation`, and `args`. Use `{source, query}` only for legacy sources.
+6. Inspect the result. A mutation receipt is not evidence of remote state. If the result is `unknown-outcome`, inspect the remote state through an authorized read before deciding whether to make another explicit attempt.
+
+Do not retry uncertain writes automatically. Native nested records can retain raw arguments and results even when wrapper text is bounded.
