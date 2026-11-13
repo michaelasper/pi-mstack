@@ -16,3 +16,16 @@ If setup reports an incompatible file, preserve it and correct its schema before
 A registry-valid selection can still be rejected by native subagent policy. Resolve that policy or obtain the required authority. Do not retry by omitting or substituting the model.
 
 See the [configuration reference](../configuration.md) for file location, schema, thinking suffixes, panel shapes, and precedence limits.
+
+## Import a legacy role file
+
+Import replaces all configured roles. It preserves the default-mode setting, not role assignments absent from the source.
+
+1. Rewrite legacy model slugs and space-separated thinking as exact authenticated `provider/model[:thinking]` selectors. Keep `auto` and `inherit-parent` where intended.
+2. Remove retired role lines, Markdown fences, and bullets. Set thinking on each selector rather than relying on an ignored `# budget` comment.
+3. Run `/setup-pstack import "~/migration notes/pstack-models.mdc"` with your source path.
+4. Check the replacement warning, preserved default, configured roles JSON, and complete effective table. Confirm only when all match your intent.
+5. If the preview changes during confirmation, retry the command and review the new preview.
+6. Run `/pstack doctor` to inspect the saved roles.
+
+See [legacy role import](../configuration.md#legacy-role-import) for the strict grammar and path rules.
