@@ -4,6 +4,16 @@ Versions use [Semantic Versioning](https://semver.org/). A heading records prepa
 
 ## [Unreleased]
 
+### Added
+
+- `--pstack-plan` registers a default-off `pstack_plan` tool for one validated, ordered plan per session branch, with an opaque compare-and-append revision, explicit absent, cleared, and unsupported states, and provider-visible restoration built per request.
+- `--pstack-idle-compact` compacts once at 80 percent context usage when the agent settles idle, rearms at or below 70 percent, and disarms after a failure or ineffective summary.
+
+### Limits
+
+- Plan state persists with native session persistence, so a conversation-less session can remain memory-only. Compare-and-append is single-runtime and is not a cross-process transaction.
+- Idle compaction is admitted by context usage, not cache age. It makes no cache-hit, cost, or latency promise, and native manual compaction still aborts internally.
+
 ## [0.3.0]
 
 ### Added

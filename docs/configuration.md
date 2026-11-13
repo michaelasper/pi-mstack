@@ -79,6 +79,17 @@ Mode entries use custom type `pi-mstack/mode` with version `1`. The latest expli
 
 Doctor reports tool presence or inactivity from public metadata. Dependency versions and resolved agent provenance remain unverified where that metadata is unavailable. Native agent overrides are operator choices. A workflow must inspect native list or get metadata before claiming the bundled definition's restrictions.
 
+## Optional plan and compaction flags
+
+Two native extension flags are off by default and are read at session start. They are not part of `pstack/models.json` or `pstack/environment.json`, and they do not require Poteto Mode.
+
+| Flag | Effect |
+| --- | --- |
+| `--pstack-plan` | Registers the `pstack_plan` tool and injects the saved branch plan into each provider request. |
+| `--pstack-idle-compact` | Compacts once at 80 percent context usage when the agent settles idle, and rearms at or below 70 percent. |
+
+See [saved plans and idle compaction](reference/plans.md) for the data shape, revision and stale-write rules, branch and fork behavior, privacy limits, and the native abort caveat. `/pstack doctor` reports both flags passively; it never compacts or repairs state.
+
 ## Goals and environment
 
 The separate [goals, naming and context reference](reference/environment.md) defines `/goal` and `pstack/environment.json`. The role-model schema above is unchanged.

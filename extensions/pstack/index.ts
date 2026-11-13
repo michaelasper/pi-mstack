@@ -13,6 +13,8 @@ import { registerGrounding } from './grounding.ts';
 import { registerNaming } from './naming.ts';
 import { loadEnvironment } from './environment-config.ts';
 import { operationStatus } from './context-roles.ts';
+import { registerPlan } from './plan.ts';
+import { createIdleCompaction } from './idle-compaction.ts';
 
 export const modeType = 'pi-mstack/mode';
 function branchMode(entries: readonly SessionEntry[]): boolean | undefined {
@@ -40,6 +42,20 @@ export default function pstack(pi: ExtensionAPI) {
   const ownsGoal = registerGoal(pi, ownPath, report);
   const groundingStatus = registerGrounding(pi, path, report);
   const naming = registerNaming(pi);
+  pi.registerFlag('pstack-plan', { description: 'Enable the pstack_plan saved-plan tool', type: 'boolean', default: false });
+  pi.registerFlag('pstack-idle-compact', { description: 'Compact native context once at 80 percent usage when the agent settles idle', type: 'boolean', default: false });
+  const plan = registerPlan(pi, ownPath);
+  let idleCompactEnabled = false;
+  const idleCompaction = createIdleCompaction(() => idleCompactEnabled);
+  pi.on('context', (event, ctx) => {
+    const messages = plan.inject(ctx, event.messages);
+    if (messages) return { messages };
+  });
+  pi.on('agent_settled', async (event, ctx) => {
+    const running = idleCompaction.settled(ctx, event.aborted);
+    if (running) await running;
+  });
+  pi.on('session_shutdown', () => idleCompaction.close());
   let pendingName: { sessionId: string; raw: string; expected: string } | undefined;
   const clearName = () => { pendingName = undefined; naming.clear(); };
   pi.on('session_start', clearName);
@@ -129,6 +145,9 @@ export default function pstack(pi: ExtensionAPI) {
     const state = loadConfig(path);
     if (state.kind === 'invalid') report(ctx, state.diagnostic, true);
     ctx.ui.setStatus('pi-mstack', isEnabled(ctx) ? 'Poteto Mode' : undefined);
+    if (pi.getFlag('pstack-plan') === true) plan.start();
+    idleCompactEnabled = pi.getFlag('pstack-idle-compact') === true;
+    idleCompaction.reset();
   });
   pi.on('session_tree', (_event, ctx) => {
     ctx.ui.setStatus('pi-mstack', isEnabled(ctx) ? 'Poteto Mode' : undefined);
@@ -137,6 +156,9 @@ export default function pstack(pi: ExtensionAPI) {
     const sections = event.systemPromptOptions.sections;
     delete sections['pi-mstack-mode'];
     if (!collisions().length && isEnabled(ctx)) sections['pi-mstack-mode'] = `Poteto Mode is enabled on this branch. Read ${skillPath('poteto-mode')} in full before work, including the Principles index and Pi adapter. Read applicable leaves. Restore these instructions after compaction. The parent owns the playbook.`;
+    const planSection = plan.section();
+    if (planSection) sections['pi-mstack-plan'] = planSection;
+    else delete sections['pi-mstack-plan'];
     const table = roleData(loadConfig(path), ctx);
     sections['pi-mstack-role-data'] = table + '\n' + policyStatus(pi.getSettings(), ctx.isProjectTrusted(), table);
   });
@@ -169,7 +191,7 @@ export default function pstack(pi: ExtensionAPI) {
         const tool = tools.find(tool => tool.name === operation.target.tool);
         return `Context ${role}/${name}: ${operation.effect}; ${operation.target.tool}; ${operationStatus(operation.target.tool, tools, active)}; ${operation.target.selector ? 'selector configured, identity unverified' : 'not grant-ready, no selector'}${operation.effect === 'write' && tool?.sourceInfo?.path !== 'builtin:mcp' ? '; unsupported write adapter' : ''}`;
       }));
-      report(ctx, [`Mode ${isEnabled(ctx) ? 'on' : 'off'}; default ${defaultMode() ? 'on' : 'off'}.`, ...collisions(), ...capabilities, groundingStatus(), ...operations, 'Context availability is a passive snapshot, not authentication or future permission. Legacy sources are unclassified and are not approved explorer grants.', 'Dependency versions and resolved native agent provenance unverified. Inspect native subagent list/get metadata before claiming bundled restrictions.', `Configuration ${path}`, roleData(loadConfig(path), ctx), policyStatus(pi.getSettings(), ctx.isProjectTrusted(), roleData(loadConfig(path), ctx))].join('\n'));
+      report(ctx, [`Mode ${isEnabled(ctx) ? 'on' : 'off'}; default ${defaultMode() ? 'on' : 'off'}.`, ...collisions(), `Feature flags: pstack-plan ${pi.getFlag('pstack-plan') === true ? 'on' : 'off'}, pstack-idle-compact ${pi.getFlag('pstack-idle-compact') === true ? 'on' : 'off'}. Passive availability only; doctor does not compact or repair saved plans.`, ...capabilities, groundingStatus(), ...operations, 'Context availability is a passive snapshot, not authentication or future permission. Legacy sources are unclassified and are not approved explorer grants.', 'Dependency versions and resolved native agent provenance unverified. Inspect native subagent list/get metadata before claiming bundled restrictions.', `Configuration ${path}`, roleData(loadConfig(path), ctx), policyStatus(pi.getSettings(), ctx.isProjectTrusted(), roleData(loadConfig(path), ctx))].join('\n'));
     },
   });
   pi.registerCommand('setup-pstack', {
