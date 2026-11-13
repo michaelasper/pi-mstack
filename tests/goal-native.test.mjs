@@ -54,15 +54,19 @@ test('packed SDK goals remain branch intent through navigation, compaction and r
   assert.equal(manager.getEntries().filter(e => e.customType === 'pi-mstack/goal').length, 2);
 });
 
-test('packed SDK naming waits for accepted raw task, not consumed, transformed, extension or auth-rejected input', async t => {
+for (const policy of ['task', 'model']) test(`packed SDK ${policy} naming waits for accepted raw task, not consumed, transformed, extension or auth-rejected input`, async t => {
   let pi;
-  const { session, manager, env, modelRuntime } = await sdk(t, [api => {
+  const { session, manager, env, modelRuntime, agentDir, dir } = await sdk(t, [api => {
     pi = api;
     api.on('input', event => {
       if (event.text === 'CONSUME-1') return { action: 'handled' };
       if (event.text === 'REPLACE-1') return { action: 'transform', text: 'REPLACED_TASK' };
     });
   }]);
+  mkdirSync(join(agentDir, 'pstack'));
+  writeFileSync(join(agentDir, 'pstack/environment.json'), JSON.stringify({ version: 'pi-mstack/environment/1', naming: policy }));
+  process.env.MSTACK_PLAN = join(dir, 'plan.json');
+  writeFileSync(process.env.MSTACK_PLAN, JSON.stringify([{ name: 'mstack_set_session_title', arguments: { title: 'Implement local parser changes' } }]));
   const wake = new Promise(resolve => { const off = session.subscribe(e => { if (e.type === 'agent_settled') { off(); resolve(); } }); });
   pi.sendMessage({ customType: 'test-name-wake', content: 'WAKE-22', display: false }, { triggerTurn: true });
   await wake; assert.equal(manager.getSessionName(), undefined);
@@ -78,8 +82,8 @@ test('packed SDK naming waits for accepted raw task, not consumed, transformed, 
   await assert.rejects(session.prompt('REJECTED-1'), /API key|auth/i);
   assert.equal(manager.getSessionName(), undefined); assert.equal(captures(env).length, requests);
   await session.setModel(modelRuntime.getModel('mstack-test', 'script/model'));
-  await session.prompt('/poteto-mode\nImplement TASK-42 locally');
-  assert.equal(manager.getSessionName(), 'TASK-42');
+  await session.prompt('/poteto-mode\nImplement TASK-42 locally EXECUTE_TEST_PLAN');
+  assert.equal(manager.getSessionName(), policy === 'model' ? 'TASK-42 Implement local parser changes' : 'TASK-42');
   pi.setSessionName(''); await session.prompt('OTHER-55'); assert.equal(manager.getSessionName(), undefined);
   assert.equal(manager.getEntries().filter(e => e.customType === 'pi-mstack/naming-attempt').length, 1);
 });
@@ -175,4 +179,22 @@ test('packed RPC naming preserves native clears, interrupted attempts and disabl
     assert.equal((await client.send('get_state')).sessionName, undefined);
     assert.equal((await client.send('get_entries')).entries.filter(e => e.customType === 'pi-mstack/naming-attempt').length, 0);
   }
+});
+
+test('packed SDK unconsumed model offers expire at settled and restored active sets are pruned', async t => {
+  const { session, manager, agentDir } = await sdk(t);
+  mkdirSync(join(agentDir, 'pstack'));
+  writeFileSync(join(agentDir, 'pstack/environment.json'), JSON.stringify({ version: 'pi-mstack/environment/1', naming: 'model' }));
+  const tool = 'mstack_set_session_title';
+  await session.prompt('Clarify parser requirements');
+  assert.equal(manager.getSessionName(), undefined);
+  assert.equal(session.getActiveToolNames().includes(tool), false);
+  const user = manager.getEntries().find(e => e.message?.role === 'user');
+  session.setActiveToolsByName([...session.getActiveToolNames(), tool]);
+  await session.navigateTree(user.id, { summarize: false });
+  assert.equal(session.getActiveToolNames().includes(tool), false);
+  session.setActiveToolsByName([...session.getActiveToolNames(), tool]);
+  await session.reload();
+  assert.equal(session.getActiveToolNames().includes(tool), false);
+  assert.equal(manager.getEntries().filter(e => e.customType === 'pi-mstack/naming-attempt').length, 0);
 });

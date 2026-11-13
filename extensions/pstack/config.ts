@@ -70,7 +70,7 @@ export function modelChoices(ctx: Pick<ExtensionContext, 'scopedModels' | 'model
 }
 type RoleContext = Pick<ExtensionContext, 'model' | 'thinkingLevel' | 'modelRegistry' | 'scopedModels'>;
 export type RoleSelection = Readonly<{ selector?: string; blocked?: string; outsideScope?: boolean }>;
-export function resolveRole(state: ConfigState, ctx: RoleContext, name: string): readonly RoleSelection[] {
+export function resolveRole(state: ConfigState, ctx: RoleContext, name: string, availability?: ReadonlySet<string>): readonly RoleSelection[] {
   if (state.kind === 'invalid') return [{ blocked: state.diagnostic }];
   const role = roles.find(role => role.name === name);
   if (!role) return [{ blocked: 'unknown role' }];
@@ -85,19 +85,43 @@ export function resolveRole(state: ConfigState, ctx: RoleContext, name: string):
     const matches = available.filter(m => `${m.provider}/${m.id}` === exact.combinedId);
     if (matches.length > 1) return { selector, blocked: 'ambiguous combined model ID' };
     const model = matches[0];
-    if (!model) return { selector, blocked: 'unavailable or unauthenticated' };
+    if (!model || (availability && !availability.has(exact.combinedId))) return { selector, blocked: 'unavailable or unauthenticated' };
     if (exact.thinking && !getSupportedThinkingLevels(model).some(level => level === exact.thinking)) return { selector, blocked: 'unsupported thinking' };
     return { selector, outsideScope: Boolean(ctx.scopedModels.length && !ctx.scopedModels.some(s => s.model.provider === model.provider && s.model.id === model.id)) };
   });
 }
-export function roleData(state: ConfigState, ctx: RoleContext) {
+export function roleData(state: ConfigState, ctx: Pick<ExtensionContext, 'model' | 'thinkingLevel' | 'modelRegistry' | 'scopedModels'>) {
   if (state.kind === 'invalid') return `Configuration blocked. ${state.diagnostic}. Do not substitute defaults.`;
-  return 'Pass exact effective selectors to native subagent. Native preflight required. Do not retry rejected selections by omission or substitution.\n' + roles.map(role => {
-    const result = resolveRole(state, ctx, role.name).map(value => value.blocked
-      ? value.selector ? `${value.selector} [BLOCKED, ${value.blocked}]` : `BLOCKED, ${value.blocked}`
+  return inspectRoles(state.config, ctx).table;
+}
+export async function freshImportAvailability(config: Config, ctx: Pick<ExtensionContext, 'model' | 'modelRegistry'>) {
+  const selected = new Set(roles.flatMap(role => {
+    const configured = config.roles[role.name] ?? 'inherit-parent';
+    return (Array.isArray(configured) ? configured : [configured]).map(value => {
+      const parsed = splitSelector(value);
+      return parsed.kind === 'exact' ? parsed.combinedId : ctx.model ? `${ctx.model.provider}/${ctx.model.id}` : undefined;
+    });
+  }));
+  const providers = new Set(ctx.modelRegistry.getAvailable().filter(model => selected.has(`${model.provider}/${model.id}`)).map(model => model.provider));
+  const signal = AbortSignal.timeout(5000);
+  try {
+    const available = await Promise.all([...providers].map(provider => ctx.modelRegistry.getAvailableOfType('chat', provider, { signal })));
+    signal.throwIfAborted();
+    return new Set(available.flatMap(models => models.map(model => `${model.provider}/${model.id}`)));
+  } catch {
+    throw Error('Fresh authentication check failed. Configuration unchanged. Retry the import.');
+  }
+}
+export function inspectRoles(config: Config, ctx: Pick<ExtensionContext, 'model' | 'thinkingLevel' | 'modelRegistry' | 'scopedModels'>, availability?: ReadonlySet<string>) {
+  let valid = true;
+  const blocked = (text: string) => { valid = false; return text; };
+  const table = 'Pass exact effective selectors to native subagent. Native preflight required. Do not retry rejected selections by omission or substitution.\n' + roles.map(role => {
+    const result = resolveRole({ kind: 'valid', config, original: undefined }, ctx, role.name, availability).map(value => value.blocked
+      ? blocked(value.selector ? `${value.selector} [BLOCKED, ${value.blocked}]` : `BLOCKED, ${value.blocked}`)
       : `${value.selector} [registry-valid; ${value.outsideScope ? 'outside session picker scope; ' : ''}native preflight required]`);
     return `${role.name}: ${result.join(' | ')}${role.panel && new Set(result).size === 1 ? ' [repeated samples, not multi-model diversity]' : ''}`;
   }).join('\n');
+  return { valid, table };
 }
 const PolicySchema = Type.Object({ subagents: Type.Optional(Type.Object({
   maxThinking: Type.Optional(Type.String()),

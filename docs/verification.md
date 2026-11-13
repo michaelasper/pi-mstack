@@ -124,12 +124,14 @@ The adapter test executes the documented `printf` and header-read commands throu
 
 `tests/goal-native.test.mjs` runs packed SDK goal ancestry, compaction, reload, idempotence, busy refusal, naming and authentication-rejection checks. RPC checks command provenance, suffixed collisions, foreign prompts and noncolliding skills. `tests/mode-input.test.mjs` includes real PTY goal, naming and removed-alias cases.
 
+`tests/model-naming-native.test.mjs` runs the packed title tool through RPC. It covers title validation, duplicate calls, policy and rename races, cancellation, actual retry, navigation, compaction, resume, and forks. The scripted provider records actual declarations with Pi's `getCurrentTools(context.messages)` alongside raw request messages. Pi passes providers a `TranscriptContext`, whose tool declarations live in system messages rather than a `context.tools` property. These tests prove native behavior without paid inference, not model compliance. Ordinary post-tool continuation requests are counted separately from the absence of dedicated naming inference.
+
 `tests/context-native.test.mjs` invokes a real local stdio MCP server and a custom tool inside native children. Nonces agree between server logs, tool results and provider requests. It checks relative extension loading, duplicate suppression, unchanged default allowlists, foreground and background context, and missing-provider, missing-tool, hidden-tool and declined-trust failures. It also distinguishes sanitized wrapper errors and bounded output from raw native events and `nestedCalls` metadata. The fixture contains a synthetic secret-like sentinel, not a credential.
 
 Retain those records with:
 
 ```sh
-MSTACK_KEEP_TEST_ARTIFACTS=1 node --test tests/context-native.test.mjs tests/goal-native.test.mjs tests/mode-input.test.mjs
+MSTACK_KEEP_TEST_ARTIFACTS=1 node --test tests/context-native.test.mjs tests/goal-native.test.mjs tests/model-naming-native.test.mjs tests/mode-input.test.mjs
 ```
 
 `tests/context.test.mjs` separately checks an uncooperative provider deadline and branch invalidation. `tests/environment.test.mjs` checks scoped merging, size bounds and file containment. These tests do not establish protection against hostile local processes with the same filesystem permissions.
