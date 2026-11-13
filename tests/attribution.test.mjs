@@ -73,6 +73,54 @@ test('override keeps package and output separate and excludes ambient poisoning'
   assert.equal(value.cli.path, helper);
 });
 
+test('repository observations ignore ambient Git overrides', t => {
+  const dir = temporary(t), home = join(dir, 'home');
+  mkdirSync(home);
+  const gitEnv = { PATH: process.env.PATH, HOME: home, GIT_CONFIG_NOSYSTEM: '1' };
+  function repository(name) {
+    const cwd = join(dir, name);
+    mkdirSync(cwd);
+    const git = args => execFileSync('git', args, { cwd, env: gitEnv, encoding: 'utf8' }).trim();
+    git(['init', '--quiet']);
+    git(['-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '--quiet', '--allow-empty', '-m', name]);
+    return { cwd, commit: git(['rev-parse', 'HEAD']) };
+  }
+  const target = repository('target'), other = repository('other');
+  writeFileSync(join(other.cwd, 'dirty'), 'dirty');
+  const cli = fixture(join(dir, 'cli'), "console.log('9.8.7')");
+  const extra = {
+    HOME: home, MSTACK_PI_CLI: cli, GIT_DIR: join(other.cwd, '.git'), GIT_WORK_TREE: other.cwd,
+    GIT_CONFIG_COUNT: '1', GIT_CONFIG_KEY_0: 'core.bare', GIT_CONFIG_VALUE_0: 'true',
+  };
+  assert.notEqual(target.commit, other.commit);
+  assert.deepEqual(manifest(run([], extra, target.cwd)).repository, { commit: target.commit, dirty: false });
+  writeFileSync(join(target.cwd, 'dirty'), 'dirty');
+  assert.deepEqual(manifest(run([], extra, target.cwd)).repository, { commit: target.commit, dirty: true });
+});
+
+test('cleanup failure preserves the manifest without exposing error details', t => {
+  const dir = temporary(t), entry = join(dir, 'cleanup-failure.mjs');
+  const cli = fixture(join(dir, 'cli'), "console.log('9.8.7')");
+  writeFileSync(entry, `
+    import fs from 'node:fs';
+    import { syncBuiltinESMExports } from 'node:module';
+    fs.rmSync = path => { throw Error('cleanup-secret-sentinel ' + path); };
+    syncBuiltinESMExports();
+    await import(${JSON.stringify(script)});
+  `);
+  for (const args of [[], ['--output', join(dir, 'manifest.json')]]) {
+    const result = run(args, { MSTACK_PI_CLI: cli, TMPDIR: dir }, dir, entry);
+    assert.equal(result.status, 0, result.stderr);
+    const value = JSON.parse(args.length ? readFileSync(args[1], 'utf8') : result.stdout);
+    assert.equal(value.cli.versionOutput, '9.8.7');
+    assert.equal(value.cli.packageVersion, '9.8.7');
+    assert.equal(value.schema, 'pi-mstack/attribution/1');
+    assert.equal(result.stderr, 'Cannot remove attribution scratch directory. Temporary files may remain.\n');
+    assert.ok(!result.stdout.includes('cleanup-secret-sentinel'));
+    assert.ok(!result.stderr.includes(dir));
+  }
+});
+
 test('unavailable CLI observations still write evidence without fallback', t => {
   const dir = temporary(t), output = join(dir, 'manifest.json');
   const missing = run(['--output', output], { MSTACK_PI_CLI: join(dir, 'missing/dist/bundle/cli.js') });

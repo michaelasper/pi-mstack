@@ -56,12 +56,16 @@ function versionObservation() {
   } catch {
     return unavailable('spawn-error');
   } finally {
-    if (scratch) rmSync(scratch, { recursive: true, force: true });
+    try {
+      if (scratch) rmSync(scratch, { recursive: true, force: true });
+    } catch {
+      console.error('Cannot remove attribution scratch directory. Temporary files may remain.');
+    }
   }
 }
 
 function repositoryObservation() {
-  const options = { encoding: 'utf8', timeout: 10000, maxBuffer: 1024 * 1024, killSignal: 'SIGKILL' };
+  const options = { env: { PATH: process.env.PATH }, encoding: 'utf8', timeout: 10000, maxBuffer: 1024 * 1024, killSignal: 'SIGKILL' };
   const commit = spawnSync('git', ['rev-parse', 'HEAD'], options);
   const status = spawnSync('git', ['status', '--porcelain'], options);
   return {

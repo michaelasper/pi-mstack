@@ -23,7 +23,9 @@ The suite requires Git, tar, Python 3, a POSIX terminal, and installed developme
 
 The CLI path follows `tests/helpers.mjs`, including `MSTACK_PI_CLI`. Package metadata and sanitized `--version` output remain separate. SDK identity comes from module resolution, without importing the SDK. Missing identities appear as unavailable values, not fallback versions. The version probe uses a temporary home, a ten-second timeout, and a 4096-byte output limit.
 
-The manifest includes repository, Node, and OS observations. It records only presence booleans for ambient `MSTACK_PI_CLI` and `PI_PACKAGE_DIR`, not an environment dump or credentials. Absolute paths can contain local usernames. Treat the manifest as local evidence and review it before sharing.
+If scratch cleanup fails, the script preserves the manifest and prints a fixed warning to stderr without error details or scratch paths. Temporary files may remain.
+
+Git probes receive only `PATH` from the ambient environment, so ambient `GIT_*` overrides cannot redirect repository observations away from the working directory. The manifest includes repository, Node, and OS observations. It records only presence booleans for ambient `MSTACK_PI_CLI` and `PI_PACKAGE_DIR`, not an environment dump or credentials. Absolute paths can contain local usernames. Treat the manifest as local evidence and review it before sharing.
 
 The test job generates one manifest before checks. CI is configured to upload it separately with `if: always()` and 14-day retention, even when later tests fail. Actual failure retention remains unproven until a real CI run demonstrates it. The manifest does not enter the release artifact.
 
