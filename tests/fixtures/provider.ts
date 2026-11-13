@@ -36,14 +36,17 @@ export default function provider(pi: ExtensionAPI) {
       const stream = createAssistantMessageEventStream();
       const log = process.env.MSTACK_CAPTURE;
       if (log) appendFileSync(log, JSON.stringify({ pid: process.pid, model: model.id, tools: pi.getActiveTools(), providerTools: getCurrentTools(context.messages), system: getCurrentSystemPrompt(context.messages), messages: context.messages }) + '\n');
-      const message: AssistantMessage = { role: 'assistant', provider: model.provider, api: model.api, model: model.id, timestamp: Date.now(), content: [], stopReason: 'stop', usage: { input: 1, output: 1, cacheRead: 0, cacheWrite: 0, totalTokens: 2, cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 } } };
-      const last = context.messages.filter(m => !(m.role === 'user' && JSON.stringify(m).includes('Context source '))).at(-1);
+      const usagePath = process.env.MSTACK_USAGE;
+      const usage = (() => { try { return usagePath ? JSON.parse(readFileSync(usagePath, 'utf8')) as { input?: number; output?: number } : {} } catch { return {} } })();
+      const message: AssistantMessage = { role: 'assistant', provider: model.provider, api: model.api, model: model.id, timestamp: Date.now(), content: [], stopReason: 'stop', usage: { input: usage.input ?? 1, output: usage.output ?? 1, cacheRead: 0, cacheWrite: 0, totalTokens: (usage.input ?? 1) + (usage.output ?? 1), cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 } } };
+      const summary = context.messages.some(m => m.role === 'system' && JSON.stringify(m).includes('context summarization assistant'));
+      const last = context.messages.filter(m => !(m.role === 'user' && (JSON.stringify(m).includes('Context source ') || JSON.stringify(m).includes('Saved pstack plan for this branch')))).at(-1);
       const text = JSON.stringify(last) ?? "";
       let calls: Array<{ name: string; arguments: ToolCall['arguments'] }> = [];
-      if (last?.role === 'user' && text.includes('EXECUTE_TEST_PLAN') && process.env.MSTACK_PLAN) calls = JSON.parse(readFileSync(process.env.MSTACK_PLAN, 'utf8'));
-      if (last?.role === 'user' && text.includes('EXECUTE_CHILD_PLAN') && process.env.MSTACK_CHILD_PLAN) calls = JSON.parse(readFileSync(process.env.MSTACK_CHILD_PLAN, 'utf8'));
+      if (!summary && last?.role === 'user' && text.includes('EXECUTE_TEST_PLAN') && process.env.MSTACK_PLAN) calls = JSON.parse(readFileSync(process.env.MSTACK_PLAN, 'utf8'));
+      if (!summary && last?.role === 'user' && text.includes('EXECUTE_CHILD_PLAN') && process.env.MSTACK_CHILD_PLAN) calls = JSON.parse(readFileSync(process.env.MSTACK_CHILD_PLAN, 'utf8'));
       let held = false;
-      if (last?.role === 'user' && process.env.MSTACK_GROUNDING_PLAN && pi.getActiveTools().includes('structured_output')) {
+      if (!summary && last?.role === 'user' && process.env.MSTACK_GROUNDING_PLAN && pi.getActiveTools().includes('structured_output')) {
         const plan = JSON.parse(readFileSync(process.env.MSTACK_GROUNDING_PLAN, 'utf8'));
         const explainer = getCurrentSystemPrompt(context.messages)?.includes('<active_agent name="pstack-explainer"/>');
         const second = context.messages.some(m => m.role === 'user' && JSON.stringify(m).includes('second'));
@@ -51,17 +54,21 @@ export default function provider(pi: ExtensionAPI) {
         held = !explainer && second && Boolean(process.env.MSTACK_BARRIER);
         if (held) appendFileSync(process.env.MSTACK_BARRIER + '.held', 'held');
       }
+      const record = () => { const path = process.env.MSTACK_FINISH; if (path) appendFileSync(path, JSON.stringify({ stopReason: message.stopReason, summary }) + '\n'); };
+      const holdSummary = summary && process.env.MSTACK_HOLD_SUMMARY;
+      if (holdSummary) appendFileSync(holdSummary + '.started', String(process.pid));
       const finish = () => {
         if (held && process.env.MSTACK_BARRIER && !existsSync(process.env.MSTACK_BARRIER) && !options?.signal?.aborted) { setTimeout(finish, 25); return; }
+        if (holdSummary && !existsSync(holdSummary) && !options?.signal?.aborted) { setTimeout(finish, 25); return; }
         if (options?.signal?.aborted) {
           message.stopReason = 'aborted'; message.errorMessage = 'aborted';
-          stream.push({ type: 'error', reason: 'aborted', error: message }); stream.end(); return;
+          record(); stream.push({ type: 'error', reason: 'aborted', error: message }); stream.end(); return;
         }
         const failure = process.env.MSTACK_FAIL_ONCE;
         if (failure && !existsSync(failure)) {
           writeFileSync(failure, 'failed once');
           message.stopReason = 'error'; message.errorMessage = process.env.MSTACK_FAIL_ONCE_ERROR ?? '429 rate limit test';
-          stream.push({ type: 'error', reason: 'error', error: message }); stream.end(); return;
+          record(); stream.push({ type: 'error', reason: 'error', error: message }); stream.end(); return;
         }
         stream.push({ type: 'start', partial: message });
         if (calls.length) {
@@ -81,6 +88,7 @@ export default function provider(pi: ExtensionAPI) {
           stream.push({ type: 'text_delta', contentIndex: 0, delta: output, partial: message });
           stream.push({ type: 'text_end', contentIndex: 0, content: output, partial: message });
         }
+        record();
         stream.push({ type: 'done', reason: message.stopReason === 'toolUse' ? 'toolUse' : 'stop', message });
         stream.end();
       };
