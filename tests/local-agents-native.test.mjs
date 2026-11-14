@@ -9,6 +9,7 @@ import { pathToFileURL } from 'node:url';
 import { packed } from './helpers.mjs';
 
 const version = process.env.MSTACK_LOCAL_PI_VERSION ?? '1.5.0';
+const packageVersion = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')).version;
 const base = process.env.MSTACK_LOCAL_EVIDENCE ?? mkdtempSync(join(tmpdir(), 'mstack-local-'));
 mkdirSync(base, { recursive: true });
 const artifact = packed();
@@ -100,7 +101,7 @@ test('packed artifact lists and preflights both local agents with package proven
     assert.deepEqual(row.aliases ?? [], []);
     assert.deepEqual(row.tools.names, row.name === 'pstack-local-explorer' ? ['read', 'grep', 'find', 'ls'] : ['read', 'grep', 'find', 'ls', 'bash', 'edit', 'write']);
   }
-  assert.ok(JSON.stringify(list).includes('pi-mstack@0.3.0'));
+  assert.ok(JSON.stringify(list).includes(`pi-mstack@${packageVersion}`));
   await s.plan([{ action: 'get', agent: 'pstack-local-explorer' }]);
   const get = toolEvent(s.client, 'subagent');
   assert.equal(get?.isError, false, JSON.stringify(get));
@@ -134,7 +135,7 @@ test('packed artifact lists and preflights both local agents with package proven
   }
   for (const key of Object.keys(process.env)) if (!(key in previous)) delete process.env[key];
   Object.assign(process.env, previous);
-  assert.deepEqual(installedVersions, { '@earendil-works/pi-coding-agent': version, '@earendil-works/pi-ai': version, 'pi-subagents': '0.88.1', 'pi-mstack': '0.3.0' });
+  assert.deepEqual(installedVersions, { '@earendil-works/pi-coding-agent': version, '@earendil-works/pi-ai': version, 'pi-subagents': '0.88.1', 'pi-mstack': packageVersion });
 });
 
 test('fresh explorer reads local evidence, cannot mutate, and inherits only project context', { timeout: 60000 }, async t => {

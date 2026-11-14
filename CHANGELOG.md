@@ -4,6 +4,8 @@ Versions use [Semantic Versioning](https://semver.org/). A heading records prepa
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-14
+
 ### Added
 
 - `pstack-local-explorer` and `pstack-local-worker` packaged agents with ordinary local-tool defaults, fresh context, project instruction inheritance, and explicit native acceptance policies. Their defaults are not enforced grants.
@@ -12,7 +14,7 @@ Versions use [Semantic Versioning](https://semver.org/). A heading records prepa
 
 ### Changed
 
-- Update the tested and installed `pi-subagents` dependency to 0.88.1. The package version and Pi 1.5.0 development pin remain unchanged.
+- Update the tested and installed `pi-subagents` dependency to 0.88.1. The Pi 1.5.0 development pin is unchanged.
 
 ### Limits
 
